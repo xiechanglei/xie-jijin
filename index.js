@@ -14,8 +14,8 @@ async function generateComprehensiveReport(fundCodes) {
         return;
     }
 
-    const headers = ['基金代码', '基金名称', '统计时间', '基准净值', '最新净值', '实时涨幅', '持仓份额', '盈亏金额'];
-    const headerWidths = [10, 30, 12, 10, 10, 10, 15, 15];
+    const headers = ['基金代码', '基金名称', '统计时间', '基准净值', '最新净值', '实时涨幅', '持仓份额', '当日盈亏', '持仓金额'];
+    const headerWidths = [10, 30, 12, 10, 10, 10, 15, 15, 15];
 
     // 获取所有基金详情
     const fundDetails = [];
@@ -32,8 +32,6 @@ async function generateComprehensiveReport(fundCodes) {
         // 确保使用存储中的份额，而不是getFundCurrent函数中的份额
         // 因为份额是在添加时根据当时的基准净值计算的
         currentDay.shares = fund.shares || 0;
-        currentDay.profitLossAmount = (currentDay.netValue - currentDay.baseValue) * currentDay.shares;
-
         fundDetails.push(currentDay);
     }
 
@@ -58,7 +56,8 @@ async function generateComprehensiveReport(fundCodes) {
                 res.netValue < res.baseValue ? colorize(res.netValue, "green") : colorize(res.netValue, "red"),
                 res.dailyChangePercent >= 0 ? colorize(res.dailyChangePercent + "%", "red") : colorize(res.dailyChangePercent + "%", "green"),
                 res.shares ? res.shares.toFixed(2) : "0.00",
-                res.profitLossAmount ? (res.profitLossAmount >= 0 ? colorize("+" + res.profitLossAmount.toFixed(2), "red") : colorize(res.profitLossAmount.toFixed(2), "green")) : "0.00"
+                res.profitLossAmount ? (res.profitLossAmount >= 0 ? colorize("+" + res.profitLossAmount.toFixed(2), "red") : colorize(res.profitLossAmount.toFixed(2), "green")) : "0.00",
+                res.profitValue.toFixed(2)
             ]);
         } else {
             table.push([res.code, "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"]);
@@ -69,11 +68,15 @@ async function generateComprehensiveReport(fundCodes) {
     const totalProfitLoss = fundDetails.reduce((sum, res) => {
         return sum + (res.profitLossAmount || 0);
     }, 0);
-
+    // 计算总金额
+    const totalVotes = fundDetails.reduce((sum, res) => {
+        return sum + (res.profitValue || 0)
+    }, 0)
     // 添加汇总行
     table.push([
-        {colSpan: 7, content: colorize('总盈亏:', 'cyan')},
-        totalProfitLoss >= 0 ? colorize("+" + totalProfitLoss.toFixed(2), "red") : colorize(totalProfitLoss.toFixed(2), "green")
+        {colSpan: 7, content: colorize('总计:', 'cyan')},
+        totalProfitLoss >= 0 ? colorize("+" + totalProfitLoss.toFixed(2), "red") : colorize(totalProfitLoss.toFixed(2), "green"),
+        totalVotes.toFixed(2)
     ]);
 
     console.log(table.toString());

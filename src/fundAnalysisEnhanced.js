@@ -94,8 +94,11 @@ async function getFundCurrent(code, shares = 0) {
             const {baseValue, netValue, dailyChangePercent, time} = await getFundBaseValue(code)
             // 计算持仓盈亏
             let profitLossAmount = 0;
+            // 计算持仓总额
+            let profitValue = 0;
             if (shares > 0) {
                 profitLossAmount = (netValue - baseValue) * shares; // 持仓盈亏金额
+                profitValue = shares * netValue
             }
 
             return {
@@ -105,6 +108,7 @@ async function getFundCurrent(code, shares = 0) {
                 netValue,
                 dailyChangePercent,
                 shares,
+                profitValue,
                 profitLossAmount // 持仓盈亏金额
             };
         } else {
@@ -121,6 +125,9 @@ async function getFundBaseValue(code) {
         const content = await getHttpContent("https://m.dayfund.cn/ajs/ajaxdata.shtml?showtype=getfundvalue&fundcode=" + code);
         //使用| 分割数据
         const params = content.split('|');
+        if(params.length < 10) {
+            throw new Error()
+        }
         return {
             baseValue: parseFloat(params[1]),
             dailyChangePercent: parseFloat(params[5]),
