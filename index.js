@@ -19,28 +19,34 @@ async function generateComprehensiveReport(fundCodes) {
 
     // 获取所有基金详情
     const fundDetails = [];
-    for (const fund of fundCodes) {
+    for (let i = 0; i < fundCodes.length; i++) {
+        const fund = fundCodes[i];
         const code = fund.code;
         const shares = fund.shares || 0;
+
+        // 显示当前正在获取的基金信息
+        process.stdout.write(`\r正在获取基金 ${code} 的信息... (${i + 1}/${fundCodes.length})`);
+
         let currentDay = await getFundCurrent(code, shares);
 
-        // 如果基金有持仓金额但份额为0（即未计算过），则根据基准净值计算份额
-        if (fund.money > 0 && fund.shares === 0 && currentDay.baseValue > 0) {
-            const calculatedShares = fund.money / currentDay.baseValue;
-            // Update the currentDay object with the correct shares
-            currentDay.shares = calculatedShares;
-            currentDay.profitLossAmount = (currentDay.netValue - currentDay.baseValue) * calculatedShares;
-            // 更新存储中的份额
-            updateFundShares(code, currentDay.baseValue);
-        }
+        // 确保使用存储中的份额，而不是getFundCurrent函数中的份额
+        // 因为份额是在添加时根据当时的基准净值计算的
+        currentDay.shares = fund.shares || 0;
+        currentDay.profitLossAmount = (currentDay.netValue - currentDay.baseValue) * currentDay.shares;
 
         fundDetails.push(currentDay);
     }
+
+    // 清空进度信息
+    process.stdout.write('\r\x1b[K'); // 清除当前行
     // 使用 console.table 直接打印数据表
     const table = new Table({
         head: headers,
         colWidths: headerWidths
     });
+
+    // 按份额倒序排列
+    fundDetails.sort((a, b) => (b.shares || 0) - (a.shares || 0));
 
     fundDetails.forEach(res => {
         if (res.fundName) {
@@ -58,21 +64,38 @@ async function generateComprehensiveReport(fundCodes) {
             table.push([res.code, "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"]);
         }
     })
+
+    // 计算总盈亏金额
+    const totalProfitLoss = fundDetails.reduce((sum, res) => {
+        return sum + (res.profitLossAmount || 0);
+    }, 0);
+
+    // 添加汇总行
+    table.push([
+        {colSpan: 7, content: colorize('总盈亏:', 'cyan')},
+        totalProfitLoss >= 0 ? colorize("+" + totalProfitLoss.toFixed(2), "red") : colorize(totalProfitLoss.toFixed(2), "green")
+    ]);
+
     console.log(table.toString());
     console.log("数据来源于新浪财经，更新时间可能有延迟，仅供参考，不作为投资依据。");
 }
 
 
-function main() {
+async function main() {
     const options = getCommandOptions();
 
     if (options.add) {
         if (options.money) {
             // 添加基金并设置持仓金额
-            addCode(options.add, options.money);
+            try {
+                await addCode(options.add, options.money);
+            } catch (error) {
+                console.log(`错误: ${error.message}`);
+                process.exit(1);
+            }
         } else {
             // 添加基金但不设置持仓金额（份额默认为0）
-            addCode(options.add);
+            await addCode(options.add);
         }
     }
 
@@ -87,12 +110,30 @@ function main() {
             console.log("用法: jijin --set <code> --money <amount>");
             process.exit(1);
         }
-        setMoney(options.set, options.money);
+
+        // 检查基金代码是否存在
+        const existingFunds = getStoredCodes();
+        const fundExists = existingFunds.some(fund => fund.code === options.set);
+
+        if (!fundExists) {
+            console.log(`错误: 基金代码 ${options.set} 不存在，请先使用 --add 添加该基金`);
+            process.exit(1);
+        }
+
+        try {
+            await setMoney(options.set, options.money);
+        } catch (error) {
+            console.log(`错误: ${error.message}`);
+            process.exit(1);
+        }
     }
 
     // 显示基金信息
-    generateComprehensiveReport(getStoredCodes());
+    await generateComprehensiveReport(getStoredCodes());
 }
 
 // 运行主程序
-main();
+main().catch(error => {
+    console.log(`程序执行出错: ${error.message}`);
+    process.exit(1);
+});

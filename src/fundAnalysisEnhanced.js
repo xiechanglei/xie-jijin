@@ -121,7 +121,26 @@ async function getFundCurrent(code, shares = 0) {
     }
 }
 
+// 获取基金的基准净值
+async function getFundBaseValue(code) {
+    try {
+        const content = await getHttpContent("https://hq.sinajs.cn/list=fu_" + code, {headers: {'Referer': 'https://finance.sina.com.cn/'}});
+        const match = content.match(/var hq_str_fu_\d+="([^"]+)"/);
+        if (match) {
+            const data = match[1].split(',');
+            if (data.length > 3) {
+                const baseValue = parseFloat(data[3]);
+                return isNaN(baseValue) ? null : baseValue;
+            }
+        }
+        return null;
+    } catch (e) {
+        return null;
+    }
+}
+
 module.exports = {
     colorize,
-    getFundCurrent
+    getFundCurrent,
+    getFundBaseValue
 };
