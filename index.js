@@ -22,8 +22,16 @@ async function generateComprehensiveReport(fundCodes) {
         return;
     }
 
-    const headers = ['基金代码', '基金名称', '统计时间', '基准净值', '最近一周', '最近一月', '最近一季', '最近一年', '上个交易日', '最新净值', '实时涨幅', '持仓份额', '当日盈亏', '持仓金额'];
-    const headerWidths = [10, 30, 10, 10, 10, 10, 10, 10, 12, 10, 10, 15, 15, 15];
+    const headers = ['基金代码', '基金名称', '统计时间',
+        // '基准净值',
+        '最近一周', '最近一月', '最近一季', '最近一年', '上个交易日',
+        // '最新净值',
+        '实时涨幅', '持仓份额', '当日盈亏', '持仓金额'];
+    const headerWidths = [10, 30, 10,
+        // 10,
+        10, 10, 10, 10, 12, 10,
+        // 10,
+        15, 15, 15];
 
     // 获取所有基金详情
     const fundDetails = [];
@@ -60,13 +68,13 @@ async function generateComprehensiveReport(fundCodes) {
                 res.code,
                 colorize(res.fundName, "cyan"),
                 res.time,
-                res.baseValue,
+                // res.baseValue,
                 colorPresents(res.lastWeek),
                 colorPresents(res.lastMonth),
                 colorPresents(res.lastSeason),
                 colorPresents(res.lastYear),
                 colorPresents(res.lastDay),
-                res.netValue < res.baseValue ? colorize(res.netValue, "green") : colorize(res.netValue, "red"),
+                // res.netValue < res.baseValue ? colorize(res.netValue, "green") : colorize(res.netValue, "red"),
                 colorPresents(res.dailyChangePercent),
                 res.shares ? res.shares.toFixed(2) : "0.00",
                 colorNumber(res.profitLossAmount),
@@ -87,7 +95,7 @@ async function generateComprehensiveReport(fundCodes) {
     }, 0)
     // 添加汇总行
     table.push([
-        {colSpan: 12, content: colorize('总计:', 'cyan')},
+        {colSpan: headers.length - 2, content: colorize('总计:', 'cyan')},
         totalProfitLoss >= 0 ? colorize("+" + totalProfitLoss.toFixed(2), "red") : colorize(totalProfitLoss.toFixed(2), "green"),
         totalVotes.toFixed(2)
     ]);
