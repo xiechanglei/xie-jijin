@@ -1,0 +1,29 @@
+{
+  "name": "xie-jijin",
+  "description": "基金实时数据查询工具",
+  "version": "0.0.2",
+  "author": "xiechanglei",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xiechanglei/xie-jijin"
+  },
+  "readme": "./readme.md",
+  "bin": {
+    "jijin": "index.js"
+  },
+  "files": [
+    "index.js",
+    "src",
+    "readme.md"
+  ],
+  "dependencies": {
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0"
+  }
+}
