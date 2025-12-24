@@ -5,7 +5,8 @@
 
 const https = require('https');
 const http = require('http');
-const vm = require('vm');
+const cheerio = require('cheerio');
+const {text} = require("node:stream/consumers");
 
 /**
  * 用ANSI颜色代码美化文本
@@ -73,7 +74,6 @@ async function getHttpContent(requestUrl, config = {}) {
                     // 如果是UTF-8或未指定编码，直接转换
                     data = buffer.toString('utf8');
                 }
-
                 resolve(data);
             });
         }).on('error', (err) => {
@@ -91,22 +91,23 @@ async function getFundCurrent(code, shares = 0) {
         if (match) {
             const data = match[1].split(',');
 
-            const {baseValue, netValue, dailyChangePercent, time} = await getFundBaseValue(code)
+            const currentData = await getFundBaseValue(code)
             // 计算持仓盈亏
             let profitLossAmount = 0;
             // 计算持仓总额
             let profitValue = 0;
             if (shares > 0) {
-                profitLossAmount = (netValue - baseValue) * shares; // 持仓盈亏金额
-                profitValue = shares * netValue
+                profitLossAmount = (currentData.netValue - currentData.baseValue) * shares; // 持仓盈亏金额
+                profitValue = shares * currentData.netValue
             }
 
+            const hisData = await getFundHistoryStatics(code)
+
             return {
-                code, time,
+                ...hisData,
+                ...currentData,
+                code,
                 fundName: data[0],
-                baseValue,
-                netValue,
-                dailyChangePercent,
                 shares,
                 profitValue,
                 profitLossAmount // 持仓盈亏金额
@@ -125,34 +126,34 @@ async function getFundBaseValue(code) {
         const content = await getHttpContent("https://m.dayfund.cn/ajs/ajaxdata.shtml?showtype=getfundvalue&fundcode=" + code);
         //使用| 分割数据
         const params = content.split('|');
-        if(params.length < 10) {
-            throw new Error()
+        if (params.length > 10) {
+            return {
+                baseValue: parseFloat(params[1]),
+                dailyChangePercent: parseFloat(params[5]),
+                netValue: parseFloat(params[7]),
+                time: params[10],
+                lastDay: parseFloat(params[4]),
+            };
         }
-        return {
-            baseValue: parseFloat(params[1]),
-            dailyChangePercent: parseFloat(params[5]),
-            netValue: parseFloat(params[7]),
-            time: params[10],
-        };
     } catch (e) {
-        //如果获取不到数据
-        try {
-            const content = await getHttpContent("https://hq.sinajs.cn/list=fu_" + code, {headers: {'Referer': 'https://finance.sina.com.cn/'}});
-            const match = content.match(/var hq_str_fu_\d+="([^"]+)"/);
-            if (match) {
-                const params = match[1].split(',');
-                if (params.length > 6) {
-                    return {
-                        baseValue: parseFloat(params[3]),
-                        dailyChangePercent: parseFloat(params[6]),
-                        netValue: parseFloat(params[2]),
-                        time: params[1],
-                    };
-                }
-            }
-        } catch (e) {
+    }
+    throw new Error(`无法获取基金 ${code} 的净值数据。请检查基金代码是否正确，或稍后重试。`);
+}
+
+// 获取基金历史汇总信息
+async function getFundHistoryStatics(code) {
+    try {
+        const content = await getHttpContent("https://www.dayfund.cn/fundinfo/" + code + ".html");
+        const $ = cheerio.load(content)
+        const dataRows = $(" .boxList .row2");
+        return {
+            lastWeek: parseFloat(dataRows.children("td:eq(2)").text()),
+            lastMonth: parseFloat(dataRows.children("td:eq(3)").text()),
+            lastSeason: parseFloat(dataRows.children("td:eq(4)").text()),
+            lastYear: parseFloat(dataRows.children("td:eq(5)").text()),
         }
-        throw new Error(`无法获取基金 ${code} 的净值数据。请检查基金代码是否正确，或稍后重试。`);
+    } catch (e) {
+        return {};
     }
 }
 
