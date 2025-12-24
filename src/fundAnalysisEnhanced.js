@@ -82,7 +82,7 @@ async function getHttpContent(requestUrl, config = {}) {
     });
 }
 
-
+// 2025-12-23|3.0571|3.0571|-0.0062|-0.20%|-0.36%|-0.0110|3.0461|3.0633|2025-12-24|10:55:00
 async function getFundCurrent(code, shares = 0) {
     try {
         const content = await getHttpContent("https://hq.sinajs.cn/list=fu_" + code, {headers: {'Referer': 'https://finance.sina.com.cn/'}});
