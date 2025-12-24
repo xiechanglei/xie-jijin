@@ -90,28 +90,22 @@ async function getFundCurrent(code, shares = 0) {
         const match = content.match(/var hq_str_fu_\d+="([^"]+)"/);
         if (match) {
             const data = match[1].split(',');
-            const baseValue = parseFloat(data[3]);
-            const netValue = parseFloat(data[2]);
-            const dailyChangePercent = parseFloat(data[6]);
 
+            const {baseValue, netValue, dailyChangePercent, time} = await getFundBaseValue(code)
             // 计算持仓盈亏
-            let profitLoss = 0;
             let profitLossAmount = 0;
             if (shares > 0) {
                 profitLossAmount = (netValue - baseValue) * shares; // 持仓盈亏金额
-                profitLoss = ((netValue - baseValue) / baseValue) * 100; // 盈亏百分比（基于基准净值）
             }
 
             return {
-                code,
+                code, time,
                 fundName: data[0],
-                time: data[1],
                 baseValue,
                 netValue,
                 dailyChangePercent,
                 shares,
-                profitLossAmount, // 持仓盈亏金额
-                profitLossPercent: dailyChangePercent // 日涨跌幅
+                profitLossAmount // 持仓盈亏金额
             };
         } else {
             return {code, shares}
@@ -124,18 +118,34 @@ async function getFundCurrent(code, shares = 0) {
 // 获取基金的基准净值
 async function getFundBaseValue(code) {
     try {
-        const content = await getHttpContent("https://hq.sinajs.cn/list=fu_" + code, {headers: {'Referer': 'https://finance.sina.com.cn/'}});
-        const match = content.match(/var hq_str_fu_\d+="([^"]+)"/);
-        if (match) {
-            const data = match[1].split(',');
-            if (data.length > 3) {
-                const baseValue = parseFloat(data[3]);
-                return isNaN(baseValue) ? null : baseValue;
-            }
-        }
-        return null;
+        const content = await getHttpContent("https://m.dayfund.cn/ajs/ajaxdata.shtml?showtype=getfundvalue&fundcode=" + code);
+        //使用| 分割数据
+        const params = content.split('|');
+        return {
+            baseValue: parseFloat(params[1]),
+            dailyChangePercent: parseFloat(params[5]),
+            netValue: parseFloat(params[7]),
+            time: params[10],
+        };
     } catch (e) {
-        return null;
+        //如果获取不到数据
+        try {
+            const content = await getHttpContent("https://hq.sinajs.cn/list=fu_" + code, {headers: {'Referer': 'https://finance.sina.com.cn/'}});
+            const match = content.match(/var hq_str_fu_\d+="([^"]+)"/);
+            if (match) {
+                const params = match[1].split(',');
+                if (params.length > 6) {
+                    return {
+                        baseValue: parseFloat(params[3]),
+                        dailyChangePercent: parseFloat(params[6]),
+                        netValue: parseFloat(params[2]),
+                        time: params[1],
+                    };
+                }
+            }
+        } catch (e) {
+        }
+        throw new Error(`无法获取基金 ${code} 的净值数据。请检查基金代码是否正确，或稍后重试。`);
     }
 }
 
