@@ -66,7 +66,7 @@ async function getHttpContent(requestUrl, config = {}) {
                             data = buffer.toString('utf8');
                         }
                     } catch (e) {
-                        console.warn(`无法使用 ${charset} 解码响应，尝试使用UTF-8`);
+                        // console.warn(`无法使用 ${charset} 解码响应，尝试使用UTF-8`);
                         // 如果编码转换失败，直接使用UTF-8解码
                         data = buffer.toString('utf8');
                     }
@@ -85,12 +85,6 @@ async function getHttpContent(requestUrl, config = {}) {
 // 2025-12-23|3.0571|3.0571|-0.0062|-0.20%|-0.36%|-0.0110|3.0461|3.0633|2025-12-24|10:55:00
 async function getFundCurrent(code, shares = 0) {
     try {
-        const content = await getHttpContent("https://hq.sinajs.cn/list=fu_" + code, {headers: {'Referer': 'https://finance.sina.com.cn/'}});
-        // the response is var hq_str_fu_018993="中欧数字经济混合发起A,09:59:00,2.9356,2.9568,2.9568,0.2733,-0.717,2025-12-16";
-        const match = content.match(/var hq_str_fu_\d+="([^"]+)"/);
-        if (match) {
-            const data = match[1].split(',');
-
             const currentData = await getFundBaseValue(code)
             // 计算持仓盈亏
             let profitLossAmount = 0;
@@ -107,14 +101,10 @@ async function getFundCurrent(code, shares = 0) {
                 ...hisData,
                 ...currentData,
                 code,
-                fundName: data[0],
                 shares,
                 profitValue,
                 profitLossAmount // 持仓盈亏金额
             };
-        } else {
-            return {code, shares}
-        }
     } catch (e) {
         return {code, shares}
     }
@@ -123,16 +113,16 @@ async function getFundCurrent(code, shares = 0) {
 // 获取基金的基准净值
 async function getFundBaseValue(code) {
     try {
-        const content = await getHttpContent("https://m.dayfund.cn/ajs/ajaxdata.shtml?showtype=getfundvalue&fundcode=" + code);
-        //使用| 分割数据
-        const params = content.split('|');
-        if (params.length > 10) {
+        const content = await getHttpContent("https://fundgz.1234567.com.cn/js/"+code+".js")
+        const match = content.match(/jsonpgz\((.*)\);/)
+        const params = JSON.parse(match[1]);
+        if (params) {
             return {
-                baseValue: parseFloat(params[1]),
-                dailyChangePercent: parseFloat(params[5]),
-                netValue: parseFloat(params[7]),
-                time: params[10],
-                lastDay: parseFloat(params[4]),
+                baseValue: parseFloat(params.dwjz),
+                dailyChangePercent: parseFloat(params.gszzl),
+                netValue:  parseFloat(params.gsz),
+                time: params.gztime,
+                fundName: params.name,
             };
         }
     } catch (e) {

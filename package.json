@@ -1,7 +1,7 @@
 {
   "name": "xie-jijin",
   "description": "基金实时数据查询与持仓盈亏计算工具 - 支持添加基金、设置持仓金额、实时盈亏计算、份额管理等功能",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": "xiechanglei",
   "license": "MIT",
   "type": "commonjs",

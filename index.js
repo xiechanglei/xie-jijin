@@ -10,7 +10,7 @@ function colorPresents(num) {
 }
 
 function colorNumber(num) {
-    return num >= 0 ? colorize("+" + num.toFixed(2), "red") : colorize("-" + num.toFixed(2), "green")
+    return num >= 0 ? colorize("+" + num.toFixed(2), "red") : colorize(num.toFixed(2), "green")
 }
 
 /**
@@ -24,12 +24,12 @@ async function generateComprehensiveReport(fundCodes) {
 
     const headers = ['基金代码', '基金名称', '统计时间',
         // '基准净值',
-        '最近一周', '最近一月', '最近一季', '最近一年', '上个交易日',
+        '最近一周', '最近一月', '最近一季', '最近一年',
         // '最新净值',
         '实时涨幅', '持仓份额', '当日盈亏', '持仓金额'];
-    const headerWidths = [10, 30, 10,
+    const headerWidths = [10, 30, 20,
         // 10,
-        10, 10, 10, 10, 12, 10,
+        10, 10, 10, 10, 12,
         // 10,
         15, 15, 15];
 
@@ -73,7 +73,6 @@ async function generateComprehensiveReport(fundCodes) {
                 colorPresents(res.lastMonth),
                 colorPresents(res.lastSeason),
                 colorPresents(res.lastYear),
-                colorPresents(res.lastDay),
                 // res.netValue < res.baseValue ? colorize(res.netValue, "green") : colorize(res.netValue, "red"),
                 colorPresents(res.dailyChangePercent),
                 res.shares ? res.shares.toFixed(2) : "0.00",
