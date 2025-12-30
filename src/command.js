@@ -16,6 +16,8 @@ const getCommandOptions = () => {
         .option("--money <amount>", "设置持仓金额")
         .option("--remove <code>", "移除基金代码")
         .option("--set <code>", "设置指定基金的持仓金额")
+        .option("--watch <code>", "实时查看基金持仓详情")
+        .option("--top <code>", "实时查看基金持仓详情时设置最多显示多少股票信息，默认10")
         .parse(process.argv);
 
     const options = program.opts();
@@ -23,7 +25,9 @@ const getCommandOptions = () => {
         add: options.add || undefined,
         money: options.money || undefined,
         remove: options.remove || null,
-        set: options.set || undefined
+        set: options.set || undefined,
+        watch: options.watch || undefined,
+        top: options.top || undefined,
     };
 }
 
