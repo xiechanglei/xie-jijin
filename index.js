@@ -100,32 +100,35 @@ async function generateComprehensiveReport(fundCodes) {
 
 
 async function watchFund(code, top) {
-    const data = await getFundDetail(code, top)
-    // f2 最新价  f3涨跌幅百分比 f4 涨跌价格 f5 成交量 f6 成交额 f7 振幅 f8 换手率  f9 动态市盈率  f10 量比  f12 股票代码  f14 股票名称 f15 最高  f16 最低 F17 开盘价格  f18 昨天收盘价格
-    const head = ['股票代码', '股票名称', '开盘价格', '昨日收盘价', '最低价', '最高价格', '当前价格', '涨跌幅', '成交量', '成交额', '换手率', '动态市盈率', '量比', '振幅'];
-    const colWidths = [10, 15, 10, 12, 10, 10, 10, 10, 10, 10, 10, 12, 10, 10]
-    const table = new Table({head, colWidths});
-    data.diff.forEach((row) => {
-        table.push([row.f12,
-                row.f14,
-                colorNumber(row.f17, row.f17 > row.f18),
-                row.f18.toFixed(2),
-                colorNumber(row.f16, row.f16 > row.f18),
-                colorNumber(row.f15, row.f15 > row.f18),
-                colorNumber(row.f2, row.f2 > row.f18),
-                colorPresents(row.f3, row.f3 > 0),
-                formatNumber(row.f5),
-                formatNumber(row.f6),
-                row.f8 + "%",
-                colorSub(row.f9),
-                colorNumber(row.f10, row.f10 > 1),
-                row.f7 + "%"
-            ]
-        );
-    })
-    //clear the screen
-    console.clear()
-    console.log(table.toString());
+   try {
+       const data = await getFundDetail(code, top)
+       // f2 最新价  f3涨跌幅百分比 f4 涨跌价格 f5 成交量 f6 成交额 f7 振幅 f8 换手率  f9 动态市盈率  f10 量比  f12 股票代码  f14 股票名称 f15 最高  f16 最低 F17 开盘价格  f18 昨天收盘价格
+       const head = ['股票代码', '股票名称', '开盘价格', '昨日收盘价', '最低价', '最高价格', '当前价格', '涨跌幅', '成交量', '成交额', '换手率', '动态市盈率', '量比', '振幅'];
+       const colWidths = [10, 15, 10, 12, 10, 10, 10, 10, 10, 10, 10, 12, 10, 10]
+       const table = new Table({head, colWidths});
+       data.diff.forEach((row) => {
+           table.push([row.f12,
+                   row.f14,
+                   colorNumber(row.f17, row.f17 > row.f18),
+                   row.f18.toFixed(2),
+                   colorNumber(row.f16, row.f16 > row.f18),
+                   colorNumber(row.f15, row.f15 > row.f18),
+                   colorNumber(row.f2, row.f2 > row.f18),
+                   colorPresents(row.f3, row.f3 > 0),
+                   formatNumber(row.f5),
+                   formatNumber(row.f6),
+                   row.f8 + "%",
+                   colorSub(row.f9),
+                   colorNumber(row.f10, row.f10 > 1),
+                   row.f7 + "%"
+               ]
+           );
+       })
+       //clear the screen
+       console.clear()
+       console.log("数据获取时间:", new Date().toLocaleString());
+       console.log(table.toString());
+   }catch (e){}
 }
 
 
@@ -133,7 +136,7 @@ async function main() {
     const options = getCommandOptions();
     if (options.watch) {
         setInterval(() => {
-            watchFund(options.watch, options.top)
+                watchFund(options.watch, options.top)
         }, 10 * 1000)
         return;
     }
