@@ -4,30 +4,31 @@
  */
 const cheerio = require('cheerio');
 const {getHttpContent} = require('./http.util');
+const {getHisData, setHisData} = require("./store");
 
 // 2025-12-23|3.0571|3.0571|-0.0062|-0.20%|-0.36%|-0.0110|3.0461|3.0633|2025-12-24|10:55:00
 async function getFundCurrent(code, shares = 0) {
     try {
-            const currentData = await getFundBaseValue(code)
-            // 计算持仓盈亏
-            let profitLossAmount = 0;
-            // 计算持仓总额
-            let profitValue = 0;
-            if (shares > 0) {
-                profitLossAmount = (currentData.netValue - currentData.baseValue) * shares; // 持仓盈亏金额
-                profitValue = shares * currentData.netValue
-            }
+        const currentData = await getFundBaseValue(code)
+        // 计算持仓盈亏
+        let profitLossAmount = 0;
+        // 计算持仓总额
+        let profitValue = 0;
+        if (shares > 0) {
+            profitLossAmount = (currentData.netValue - currentData.baseValue) * shares; // 持仓盈亏金额
+            profitValue = shares * currentData.netValue
+        }
 
-            const hisData = await getFundHistoryStatics(code)
+        const hisStatics = await getFundHistoryStatics(code)
 
-            return {
-                ...hisData,
-                ...currentData,
-                code,
-                shares,
-                profitValue,
-                profitLossAmount // 持仓盈亏金额
-            };
+        return {
+            ...hisStatics,
+            ...currentData,
+            code,
+            shares,
+            profitValue,
+            profitLossAmount // 持仓盈亏金额
+        };
     } catch (e) {
         return {code, shares}
     }
@@ -36,14 +37,14 @@ async function getFundCurrent(code, shares = 0) {
 // 获取基金的基准净值
 async function getFundBaseValue(code) {
     try {
-        const content = await getHttpContent("https://fundgz.1234567.com.cn/js/"+code+".js")
+        const content = await getHttpContent("https://fundgz.1234567.com.cn/js/" + code + ".js")
         const match = content.match(/jsonpgz\((.*)\);/)
         const params = JSON.parse(match[1]);
         if (params) {
             return {
                 baseValue: parseFloat(params.dwjz),
                 dailyChangePercent: parseFloat(params.gszzl),
-                netValue:  parseFloat(params.gsz),
+                netValue: parseFloat(params.gsz),
                 time: params.gztime,
                 fundName: params.name,
             };
@@ -53,23 +54,58 @@ async function getFundBaseValue(code) {
     throw new Error(`无法获取基金 ${code} 的净值数据。请检查基金代码是否正确，或稍后重试。`);
 }
 
+
 // 获取基金历史汇总信息
 async function getFundHistoryStatics(code) {
+    const cacheData = getHisData(code);
+    if (cacheData) {
+        return cacheData;
+    }
+    let result = {};
     try {
         const content = await getHttpContent("https://www.dayfund.cn/fundinfo/" + code + ".html");
         const $ = cheerio.load(content)
         const dataRows = $(" .boxList .row2");
-        return {
+        result = {
             lastWeek: parseFloat(dataRows.children("td:eq(2)").text()),
             lastMonth: parseFloat(dataRows.children("td:eq(3)").text()),
             lastSeason: parseFloat(dataRows.children("td:eq(4)").text()),
             lastYear: parseFloat(dataRows.children("td:eq(5)").text()),
+            hisData: await getFundHistoryData(code),
         }
     } catch (e) {
-        return {};
     }
+    if (result.lastWeek && result.lastMonth && result.lastSeason && result.lastYear && result.hisData && result.hisData.length > 0) {
+        setHisData(code, result)
+    }
+    return result;
 }
+
+
+async function getFundHistoryData(code) {
+    const result = [];
+    try {
+        const content = await getHttpContent("https://www.dayfund.cn/fundvalue/" + code + ".html")
+        const $ = cheerio.load(content);
+        const dataTr = $(".row1,.row2");
+        const dataArr = Array.from(dataTr);
+
+        dataArr.forEach((row) => {
+            const dataCode = $(row).find("td:eq(1)").text()
+            if (dataCode === code) {
+                result.push({
+                    date: $(row).find("td:eq(0)").text().substring(5),
+                    percent: parseFloat($(row).find("td:eq(8)").text())
+                });
+            }
+        })
+    } catch (e) {
+    }
+    return result
+}
+
 module.exports = {
     getFundCurrent,
-    getFundBaseValue
+    getFundBaseValue,
+    getFundHistoryData
 };

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const {getFundCurrent} = require('./src/fundAnalysisEnhanced');
+const {getFundCurrent, getFundHistoryData} = require('./src/fundAnalysisEnhanced');
 const {colorize, colorPresents, colorSub, colorNumber} = require('./src/color.out');
 const Table = require('cli-table3');
 const {addCode, removeCode, getStoredCodes, setMoney, updateFundShares} = require("./src/store");
@@ -17,16 +17,28 @@ async function generateComprehensiveReport(fundCodes) {
         return;
     }
 
-    const headers = ['基金代码', '基金名称', '统计时间',
+    const headers = ['基金代码', '基金名称',
         // '基准净值',
-        '最近一周', '最近一月', '最近一季', '最近一年',
+        '实时涨幅',
+        't-1日', 't-2日', 't-3日', 't-4日', 't-5日', 't-6日', 't-7日', 't-8日', 't-9日', 't-10日',
+        '最近一周',
+        '最近一月',
+        '最近一季',
+        '最近一年',
         // '最新净值',
-        '实时涨幅', '持仓份额', '当日盈亏', '持仓金额'];
-    const headerWidths = [10, 30, 20,
+        // '持仓份额',
+        '当日盈亏',
+        '持仓金额'
+    ];
+    const headerWidths = [10, 30,
         // 10,
-        10, 10, 10, 10, 12,
+        12,
+        10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+        10, 10, 10, 10,
         // 10,
-        15, 15, 15];
+        // 15,
+        15,
+        15];
 
     // 获取所有基金详情
     const fundDetails = [];
@@ -62,15 +74,25 @@ async function generateComprehensiveReport(fundCodes) {
             table.push([
                 res.code,
                 colorize(res.fundName, "cyan"),
-                res.time,
+                colorPresents(res.dailyChangePercent),
+                colorPresents(res.hisData[0]?.percent),
+                colorPresents(res.hisData[1]?.percent),
+                colorPresents(res.hisData[2]?.percent),
+                colorPresents(res.hisData[3]?.percent),
+                colorPresents(res.hisData[4]?.percent),
+                colorPresents(res.hisData[5]?.percent),
+                colorPresents(res.hisData[6]?.percent),
+                colorPresents(res.hisData[7]?.percent),
+                colorPresents(res.hisData[8]?.percent),
+                colorPresents(res.hisData[9]?.percent),
+                // res.time,
                 // res.baseValue,
-                colorPresents(res.lastWeek, res.lastWeek > 0),
-                colorPresents(res.lastMonth, res.lastMonth > 0),
-                colorPresents(res.lastSeason, res.lastSeason > 0),
-                colorPresents(res.lastYear, res.lastYear > 0),
+                colorPresents(res.lastWeek),
+                colorPresents(res.lastMonth),
+                colorPresents(res.lastSeason),
+                colorPresents(res.lastYear),
                 // res.netValue < res.baseValue ? colorize(res.netValue, "green") : colorize(res.netValue, "red"),
-                colorPresents(res.dailyChangePercent, res.dailyChangePercent > 0),
-                res.shares ? res.shares.toFixed(2) : "0.00",
+                // res.shares ? res.shares.toFixed(2) : "0.00",
                 colorSub(res.profitLossAmount, res.profitLossAmount >= 0),
                 res.profitValue.toFixed(2)
             ]);
@@ -100,35 +122,36 @@ async function generateComprehensiveReport(fundCodes) {
 
 
 async function watchFund(code, top) {
-   try {
-       const data = await getFundDetail(code, top)
-       // f2 最新价  f3涨跌幅百分比 f4 涨跌价格 f5 成交量 f6 成交额 f7 振幅 f8 换手率  f9 动态市盈率  f10 量比  f12 股票代码  f14 股票名称 f15 最高  f16 最低 F17 开盘价格  f18 昨天收盘价格
-       const head = ['股票代码', '股票名称', '开盘价格', '昨日收盘价', '最低价', '最高价格', '当前价格', '涨跌幅', '成交量', '成交额', '换手率', '动态市盈率', '量比', '振幅'];
-       const colWidths = [10, 15, 10, 12, 10, 10, 10, 10, 10, 10, 10, 12, 10, 10]
-       const table = new Table({head, colWidths});
-       data.diff.forEach((row) => {
-           table.push([row.f12,
-                   row.f14,
-                   colorNumber(row.f17, row.f17 > row.f18),
-                   row.f18.toFixed(2),
-                   colorNumber(row.f16, row.f16 > row.f18),
-                   colorNumber(row.f15, row.f15 > row.f18),
-                   colorNumber(row.f2, row.f2 > row.f18),
-                   colorPresents(row.f3, row.f3 > 0),
-                   formatNumber(row.f5),
-                   formatNumber(row.f6),
-                   row.f8 + "%",
-                   colorSub(row.f9),
-                   colorNumber(row.f10, row.f10 > 1),
-                   row.f7 + "%"
-               ]
-           );
-       })
-       //clear the screen
-       console.clear()
-       console.log("数据获取时间:", new Date().toLocaleString());
-       console.log(table.toString());
-   }catch (e){}
+    try {
+        const data = await getFundDetail(code, top)
+        // f2 最新价  f3涨跌幅百分比 f4 涨跌价格 f5 成交量 f6 成交额 f7 振幅 f8 换手率  f9 动态市盈率  f10 量比  f12 股票代码  f14 股票名称 f15 最高  f16 最低 F17 开盘价格  f18 昨天收盘价格
+        const head = ['股票代码', '股票名称', '开盘价格', '昨日收盘价', '最低价', '最高价格', '当前价格', '涨跌幅', '成交量', '成交额', '换手率', '动态市盈率', '量比', '振幅'];
+        const colWidths = [10, 15, 10, 12, 10, 10, 10, 10, 10, 10, 10, 12, 10, 10]
+        const table = new Table({head, colWidths});
+        data.diff.forEach((row) => {
+            table.push([row.f12,
+                    row.f14,
+                    colorNumber(row.f17, row.f17 > row.f18),
+                    row.f18.toFixed(2),
+                    colorNumber(row.f16, row.f16 > row.f18),
+                    colorNumber(row.f15, row.f15 > row.f18),
+                    colorNumber(row.f2, row.f2 > row.f18),
+                    colorPresents(row.f3),
+                    formatNumber(row.f5),
+                    formatNumber(row.f6),
+                    row.f8 + "%",
+                    colorSub(row.f9),
+                    colorNumber(row.f10, row.f10 > 1),
+                    row.f7 + "%"
+                ]
+            );
+        })
+        //clear the screen
+        console.clear()
+        console.log("数据获取时间:", new Date().toLocaleString());
+        console.log(table.toString());
+    } catch (e) {
+    }
 }
 
 
@@ -136,7 +159,7 @@ async function main() {
     const options = getCommandOptions();
     if (options.watch) {
         setInterval(() => {
-                watchFund(options.watch, options.top)
+            watchFund(options.watch, options.top)
         }, 10 * 1000)
         return;
     }

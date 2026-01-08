@@ -19,15 +19,24 @@ function colorize(text, color) {
 }
 
 
-function colorPresents(num, model) {
-    return model ? colorize(num + "%", "red") : colorize(num + "%", "green")
+function colorPresents(num) {
+    if (isNaN(num) || num === undefined || num === null) {
+        return colorize("N/A", "green")
+    }
+    return num > 0 ? colorize(num + "%", "red") : colorize(num + "%", "green")
 }
 
 function colorNumber(num, model) {
+    if (isNaN(num) || num === undefined || num === null) {
+        return colorize("N/A", "green")
+    }
     return model ? colorize(num.toFixed(2), "red") : colorize(num.toFixed(2), "green")
 }
 
 function colorSub(num, model) {
+    if (isNaN(num) || num === undefined || num === null) {
+        return colorize("N/A", "green")
+    }
     return model ? colorize("+" + num.toFixed(2), "red") : colorize(num.toFixed(2), "green")
 }
 
