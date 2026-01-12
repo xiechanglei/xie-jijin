@@ -11,14 +11,12 @@
             padding: 0;
             background-color: #f5f5f5;
             width: 100vw;
-            overflow-x: hidden; /* Hide horizontal scrollbar */
         }
         .container {
             width: 100%;
             margin: 0;
-            background: transparent; /* Remove background */
             padding: 15px;
-            box-shadow: none; /* Remove shadow */
+            box-sizing: border-box;
         }
         .summary {
             background: #e9f7ef;
@@ -97,6 +95,7 @@
         }
         table {
             width: 100%;
+            box-sizing: border-box;
             border-collapse: collapse;
             margin-top: 15px;
             table-layout: fixed; /* Fixed table layout to prevent overflow */
@@ -121,21 +120,16 @@
         tbody tr:nth-child(odd) {
             background-color: transparent; /* Remove alternating row colors */
         }
-        .code-col { width: 10%; }
+        .code-col { width: 6%; }
         .name-col { width: 15%; }
-        .base-col { width: 8%; }
-        .estimate-col { width: 8%; }
-        .change-percent-col { width: 8%; }
-        .time-col { width: 12%; }
+        .base-col { width: 6%; }
+        .estimate-col { width: 6%; }
+        .change-percent-col { width: 6%; }
+        .time-col { width: 10%; }
         .shares-col { width: 8%; }
-        .amount-col { width: 10%; }
-        .change-amount-col { width: 10%; }
-        .action-col { width: 11%; }
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
+        .amount-col { width: 8%; }
+        .change-amount-col { width: 8%; }
+        .action-col { width: 13%; }
         .error {
             color: #dc3545;
             padding: 10px;
@@ -429,6 +423,7 @@
                 <td>-</td>
                 <td class="action-cell">
                     <button class="set-btn" onclick="setShare('${code}')">设置份额</button>
+                    <button class="set-btn" onclick="openFundDetail('${code}')">详情</button>
                     <button class="delete-btn" onclick="removeFund('${code}')">删除</button>
                 </td>
             `;
@@ -565,10 +560,16 @@
             changeAmountElement.className = 'summary-value ' + (totalChangeAmount >= 0 ? 'positive' : 'negative');
         }
 
+        // Open fund detail page in a new tab
+        function openFundDetail(code) {
+            window.open(`/fund-detail.html?code=${code}`, '_blank');
+        }
+
         // Make functions available globally for inline event handlers
         window.removeFund = removeFund;
         window.setShare = setShare;
         window.loadFunds = loadFunds;
+        window.openFundDetail = openFundDetail;
     </script>
 </body>
 </html>

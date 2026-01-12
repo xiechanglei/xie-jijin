@@ -205,6 +205,35 @@ class WebServer {
                     }));
                 }
             });
+        } else if (pathname.startsWith('/api/fund-share/')) {
+            // Extract fund code from the path
+            const pathParts = pathname.split('/');
+            const fundCode = pathParts[3]; // /api/fund-share/{code}
+
+            try {
+                // Get fund data from storage
+                const storedFunds = getStoredCodes();
+                const fund = storedFunds.find(f => f.code === fundCode);
+
+                if (!fund) {
+                    res.writeHead(404, {'Content-Type': 'application/json'});
+                    res.end(JSON.stringify({error: 'Fund not found'}));
+                    return;
+                }
+
+                res.writeHead(200, {'Content-Type': 'application/json'});
+                res.end(JSON.stringify({
+                    code: fund.code,
+                    shares: fund.shares || 0
+                }));
+            } catch (error) {
+                console.error(`Error fetching fund share for ${fundCode}:`, error);
+                res.writeHead(500, {'Content-Type': 'application/json'});
+                res.end(JSON.stringify({
+                    error: 'Failed to fetch fund share',
+                    message: error.message
+                }));
+            }
         } else if (pathname.startsWith('/api/fund-gz/')) {
             // Extract fund code from the path
             const pathParts = pathname.split('/');
@@ -245,6 +274,12 @@ class WebServer {
                 const nameMatch = historyText.match(/fS_name\s*=\s*["']([^"']*)["'];/);
                 const codeMatch = historyText.match(/fS_code\s*=\s*["']([^"']*)["'];/);
 
+                // Extract yield data
+                const syl_1nMatch = historyText.match(/syl_1n\s*[:=]\s*["']([^"']*)["'];/);
+                const syl_6yMatch = historyText.match(/syl_6y\s*[:=]\s*["']([^"']*)["'];/);
+                const syl_3yMatch = historyText.match(/syl_3y\s*[:=]\s*["']([^"']*)["'];/);
+                const syl_1yMatch = historyText.match(/syl_1y\s*[:=]\s*["']([^"']*)["'];/);
+
                 if (!netWorthMatch) {
                     throw new Error('Could not parse historical data');
                 }
@@ -254,12 +289,22 @@ class WebServer {
                 const fundName = nameMatch ? nameMatch[1] : 'Unknown';
                 const fundCodeFromData = codeMatch ? codeMatch[1] : fundCode;
 
+                // Extract yield values
+                const syl_1n = syl_1nMatch ? syl_1nMatch[1] : null;
+                const syl_6y = syl_6yMatch ? syl_6yMatch[1] : null;
+                const syl_3y = syl_3yMatch ? syl_3yMatch[1] : null;
+                const syl_1y = syl_1yMatch ? syl_1yMatch[1] : null;
+
                 res.writeHead(200, {'Content-Type': 'application/json'});
                 res.end(JSON.stringify({
                     fundCode: fundCodeFromData,
                     fundName,
                     netWorthTrend: netWorthData,
-                    acWorthTrend: acWorthData
+                    acWorthTrend: acWorthData,
+                    syl_1n: syl_1n,
+                    syl_6y: syl_6y,
+                    syl_3y: syl_3y,
+                    syl_1y: syl_1y
                 }));
             } catch (error) {
                 console.error(`Error fetching fund history data for ${fundCode}:`, error);
