@@ -1,14 +1,21 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const url = require('url');
-const openModule = require('open');
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import url from 'url';
+import openModule from 'open';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
 const open = openModule.default || openModule;
-const {getPort} = require('./utils/port.util');
+import {getPort} from './utils/port.util.js';
 
 // Import the store module to get fund data
-const {getStoredCodes, addCode, removeCode, setMoney} = require('../src/store');
-const {getFundCurrent} = require('../src/fundAnalysisEnhanced');
+import {getStoredCodes, addCode, removeCode, setMoney} from '../src/store.js';
+import {getFundCurrent} from '../src/fundAnalysisEnhanced.js';
+
+// Define __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 class WebServer {
     constructor() {
@@ -312,4 +319,4 @@ class WebServer {
     }
 }
 
-module.exports = WebServer;
+export default WebServer;

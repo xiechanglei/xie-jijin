@@ -1,5 +1,6 @@
-const fs = require('fs');
-const userHome = require('os').homedir();
+import fs from 'fs';
+import {homedir} from 'os';
+const userHome = homedir();
 const filePath = `${userHome}/.xie_jijin.json`;
 
 // 读取存储的基金数据
@@ -70,7 +71,7 @@ const getStoredCodes = () => {
     });
 };
 
-module.exports = {
+export {
     addCode,
     removeCode,
     getStoredCodes,

@@ -2,10 +2,9 @@
  * 基金回涨概率分析 - 增强版
  * 支持指定时间范围统计并以表格形式输出
  */
-const cheerio = require('cheerio');
-const {getHttpContent} = require('./http.util');
+import * as cheerio from 'cheerio';
+import {getHttpContent} from './http.util.js';
 
-// 2025-12-23|3.0571|3.0571|-0.0062|-0.20%|-0.36%|-0.0110|3.0461|3.0633|2025-12-24|10:55:00
 async function getFundCurrent(code, shares = 0) {
     try {
         const currentData = await getFundBaseValue(code)
@@ -18,10 +17,8 @@ async function getFundCurrent(code, shares = 0) {
             profitValue = shares * currentData.netValue
         }
 
-        const hisStatics = await getFundHistoryStatics(code)
 
         return {
-            ...hisStatics,
             ...currentData,
             code,
             shares,
@@ -33,7 +30,7 @@ async function getFundCurrent(code, shares = 0) {
     }
 }
 
-// 获取基金的基准净值
+// 获取基金的实时数据
 async function getFundBaseValue(code) {
     try {
         const content = await getHttpContent("https://fundgz.1234567.com.cn/js/" + code + ".js")
@@ -66,7 +63,6 @@ async function getFundHistoryStatics(code) {
             lastMonth: parseFloat(dataRows.children("td:eq(3)").text()),
             lastSeason: parseFloat(dataRows.children("td:eq(4)").text()),
             lastYear: parseFloat(dataRows.children("td:eq(5)").text()),
-            hisData: await getFundHistoryData(code),
         }
     } catch (e) {
     }
@@ -74,30 +70,9 @@ async function getFundHistoryStatics(code) {
 }
 
 
-async function getFundHistoryData(code) {
-    const result = [];
-    try {
-        const content = await getHttpContent("https://www.dayfund.cn/fundvalue/" + code + ".html")
-        const $ = cheerio.load(content);
-        const dataTr = $(".row1,.row2");
-        const dataArr = Array.from(dataTr);
 
-        dataArr.forEach((row) => {
-            const dataCode = $(row).find("td:eq(1)").text()
-            if (dataCode === code) {
-                result.push({
-                    date: $(row).find("td:eq(0)").text().substring(5),
-                    percent: parseFloat($(row).find("td:eq(8)").text())
-                });
-            }
-        })
-    } catch (e) {
-    }
-    return result
-}
 
-module.exports = {
+export {
     getFundCurrent,
-    getFundBaseValue,
-    getFundHistoryData
+    getFundBaseValue
 };

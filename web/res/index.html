@@ -542,7 +542,7 @@
             let totalChangeAmount = 0;
 
             for (const row of rows) {
-                const amount = parseFloat(row.cells[6].textContent) || 0; // Holdings amount
+                const amount = parseFloat(row.cells[7].textContent) || 0; // Holdings amount (was incorrectly using cell 6 which is shares)
                 const changeAmount = parseFloat(row.cells[8].textContent.replace(/[^\d.-]/g, '')) || 0; // Change amount
 
                 totalAmount += amount;

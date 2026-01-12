@@ -1,4 +1,4 @@
-const net = require('net');
+import net from 'net';
 
 /**
  * Find an available port starting from a random port number
@@ -26,6 +26,6 @@ function getPort(startPort = Math.floor(Math.random() * 10000) + 10000) {
     });
 }
 
-module.exports = {
+export {
     getPort
 };

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const WebServer = require('./web/WebServer');
+import WebServer from './web/WebServer.js';
 
 async function main() {
     console.log('启动Web服务器...');

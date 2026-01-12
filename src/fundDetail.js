@@ -1,5 +1,6 @@
-const {getHttpContent} = require("./http.util");
-const cheerio = require('cheerio');
+import {getHttpContent} from "./http.util";
+
+import * as cheerio from 'cheerio';
 
 /**
  * 持仓信息

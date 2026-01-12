@@ -1,5 +1,5 @@
-const https = require('https');
-const http = require('http');
+import https from 'https';
+import http from 'http';
 
 async function getHttpContent(requestUrl, config = {}) {
     return new Promise((resolve, reject) => {
@@ -55,6 +55,6 @@ async function getHttpContent(requestUrl, config = {}) {
     });
 }
 
-module.exports = {
+export {
     getHttpContent
-}
+};
