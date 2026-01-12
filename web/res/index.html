@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基金持仓列表</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            width: 100vw;
+            overflow-x: hidden; /* Hide horizontal scrollbar */
+        }
+        .container {
+            width: 100%;
+            margin: 0;
+            background: transparent; /* Remove background */
+            padding: 15px;
+            box-shadow: none; /* Remove shadow */
+        }
+        .summary {
+            background: #e9f7ef;
+            border-radius: 6px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .summary-label {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .summary-value {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .positive {
+            color: #dc3545; /* Red for positive */
+        }
+        .negative {
+            color: #28a745; /* Green for negative */
+        }
+        .summary-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px;
+            background: #e9f7ef;
+            border-radius: 6px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        input, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .delete-btn {
+            background: #dc3545;
+        }
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        .set-btn {
+            background: #28a745;
+        }
+        .set-btn:hover {
+            background: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            table-layout: fixed; /* Fixed table layout to prevent overflow */
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        th {
+            font-weight: bold;
+            background: transparent; /* Remove header background */
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        tbody tr:nth-child(even) {
+            background-color: transparent; /* Remove alternating row colors */
+        }
+        tbody tr:nth-child(odd) {
+            background-color: transparent; /* Remove alternating row colors */
+        }
+        .code-col { width: 10%; }
+        .name-col { width: 15%; }
+        .base-col { width: 8%; }
+        .estimate-col { width: 8%; }
+        .change-percent-col { width: 8%; }
+        .time-col { width: 12%; }
+        .shares-col { width: 8%; }
+        .amount-col { width: 10%; }
+        .change-amount-col { width: 10%; }
+        .action-col { width: 11%; }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .error {
+            color: #dc3545;
+            padding: 10px;
+            background: #fdeaea;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .action-cell {
+            display: flex;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="summary-container">
+            <div class="summary">
+                <div class="summary-item">
+                    <span class="summary-label">持仓总金额</span>
+                    <span class="summary-value" id="totalAmount">0.00</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">总涨跌幅</span>
+                    <span class="summary-value" id="totalChangePercent">0.00%</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">涨跌金额</span>
+                    <span class="summary-value" id="totalChangeAmount">0.00</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <input type="text" id="fundCodeInput" placeholder="基金代码">
+                    <input type="number" id="fundShareInput" placeholder="持仓份额" step="0.01">
+                </div>
+                <div class="control-group">
+                    <button id="addFundBtn">添加基金</button>
+                    <button id="refreshBtn">刷新数据</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <table id="fundsTable">
+            <thead>
+                <tr>
+                    <th class="code-col">基金代码</th>
+                    <th class="name-col">基金名称</th>
+                    <th class="base-col">基准值</th>
+                    <th class="estimate-col">实时估算值</th>
+                    <th class="change-percent-col">涨跌幅</th>
+                    <th class="time-col">估算时间</th>
+                    <th class="shares-col">持仓份额</th>
+                    <th class="amount-col">持仓金额</th>
+                    <th class="change-amount-col">涨跌金额</th>
+                    <th class="action-col">操作</th>
+                </tr>
+            </thead>
+            <tbody id="fundsTableBody">
+                <!-- Fund data will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Auto-refresh interval (10 minutes = 600000 milliseconds)
+        let refreshInterval;
+        let isRefreshing = false; // Flag to prevent concurrent refreshes
+
+        // Load funds data when page loads
+        window.onload = function() {
+            loadFunds();
+            // Set up auto-refresh every 10 minutes
+            refreshInterval = setInterval(loadFunds, 10 * 60 * 1000);
+
+            // Set up event listeners for controls
+            document.getElementById('addFundBtn').addEventListener('click', addFund);
+            document.getElementById('refreshBtn').addEventListener('click', loadFunds);
+        };
+
+        async function addFund() {
+            const codeInput = document.getElementById('fundCodeInput');
+            const shareInput = document.getElementById('fundShareInput');
+            const code = codeInput.value.trim();
+            const share = parseFloat(shareInput.value);
+
+            if (!code) {
+                alert('请输入基金代码');
+                return;
+            }
+
+            if (isNaN(share) || share < 0) {
+                alert('请输入有效的持仓份额');
+                return;
+            }
+
+            try {
+                // Call the backend API to add the fund
+                const response = await fetch('/api/add-fund', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        amount: share // amount represents shares
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Clear inputs
+                codeInput.value = '';
+                shareInput.value = '';
+
+                // Add fund to table immediately with placeholder data
+                addFundToTable(code, share);
+
+                // Then fetch real-time data for the newly added fund
+                await updateFundRealTimeData(code);
+            } catch (error) {
+                console.error('Error adding fund:', error);
+                alert('添加基金失败: ' + error.message);
+            }
+        }
+
+        async function removeFund(code) {
+            if (!confirm(`确定要删除基金 ${code} 吗？`)) {
+                return;
+            }
+
+            try {
+                // Call the backend API to remove the fund
+                const response = await fetch('/api/remove-fund', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        code: code
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Remove fund from table immediately
+                removeFundFromTable(code);
+            } catch (error) {
+                console.error('Error removing fund:', error);
+                alert('删除基金失败: ' + error.message);
+            }
+        }
+
+        async function setShare(code) {
+            const newShare = prompt(`请输入基金 ${code} 的新持仓份额:`);
+            if (newShare === null) return; // User cancelled
+
+            const share = parseFloat(newShare);
+            if (isNaN(share) || share < 0) {
+                alert('请输入有效的持仓份额');
+                return;
+            }
+
+            try {
+                // Call the backend API to set the fund share
+                const response = await fetch('/api/set-share', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        share: share
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Update the fund's share in the table immediately
+                updateFundShareInTable(code, share);
+
+                // Then fetch real-time data for the updated fund to update all dependent columns
+                await updateFundRealTimeData(code);
+
+                // Update summary statistics after the data is refreshed
+                updateSummaryStats();
+            } catch (error) {
+                console.error('Error setting fund share:', error);
+                alert('设置持仓份额失败: ' + error.message);
+            }
+        }
+
+        async function loadFunds() {
+            // Prevent concurrent refreshes
+            if (isRefreshing) {
+                return;
+            }
+
+            isRefreshing = true;
+            const errorEl = document.getElementById('error');
+            const tableEl = document.getElementById('fundsTable');
+            const tableBodyEl = document.getElementById('fundsTableBody');
+
+            // Hide error during refresh
+            errorEl.style.display = 'none';
+
+            try {
+                // Step 1: Get fund codes from local storage (only basic info)
+                const response = await fetch('/api/funds');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (!data.funds || !Array.isArray(data.funds)) {
+                    throw new Error('Invalid response format');
+                }
+
+                // Step 2: Process funds - add new ones, update existing ones
+                for (const fund of data.funds) {
+                    const existingRow = tableBodyEl.querySelector(`tr[data-code="${fund.code}"]`);
+                    if (existingRow) {
+                        // Update existing fund's shares
+                        const cells = existingRow.cells;
+                        cells[6].textContent = (fund.shares || 0).toFixed(2); // Update shares (now in cell 6)
+                    } else {
+                        // Add new fund to table with placeholder data
+                        addFundToTable(fund.code, fund.shares || 0, 'N/A', 0);
+                    }
+                }
+
+                // Remove funds that are no longer in the list (deleted by user)
+                const existingRows = tableBodyEl.querySelectorAll('tr[data-code]');
+                existingRows.forEach(row => {
+                    const code = row.getAttribute('data-code');
+                    const existsInData = data.funds.some(fund => fund.code === code);
+                    if (!existsInData) {
+                        row.remove();
+                    }
+                });
+
+                // Always show the table
+                tableEl.style.display = 'table';
+
+                // Step 3: Fetch real-time data for each fund
+                for (const fund of data.funds) {
+                    await updateFundRealTimeData(fund.code);
+                }
+
+                // Re-sort the table after all data is loaded
+                sortTableByAmount();
+
+            } catch (error) {
+                console.error('Error loading funds:', error);
+                errorEl.textContent = '加载基金数据失败: ' + error.message;
+                errorEl.style.display = 'block';
+            } finally {
+                isRefreshing = false;
+            }
+        }
+
+        function addFundToTable(code, shares, name = 'N/A', baseValue = 0) {
+            const tableBodyEl = document.getElementById('fundsTableBody');
+
+            // Check if fund already exists in table
+            const existingRow = tableBodyEl.querySelector(`tr[data-code="${code}"]`);
+            if (existingRow) {
+                return; // Fund already in table
+            }
+
+            const row = document.createElement('tr');
+            row.setAttribute('data-code', code);
+
+            row.innerHTML = `
+                <td>${code}</td>
+                <td>${name}</td>
+                <td>${baseValue.toFixed(4)}</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>${shares.toFixed(2)}</td>
+                <td>-</td>
+                <td>-</td>
+                <td class="action-cell">
+                    <button class="set-btn" onclick="setShare('${code}')">设置份额</button>
+                    <button class="delete-btn" onclick="removeFund('${code}')">删除</button>
+                </td>
+            `;
+
+            tableBodyEl.appendChild(row);
+        }
+
+        function removeFundFromTable(code) {
+            const tableBodyEl = document.getElementById('fundsTableBody');
+            const row = tableBodyEl.querySelector(`tr[data-code="${code}"]`);
+            if (row) {
+                row.remove();
+            }
+        }
+
+        function updateFundShareInTable(code, newShare) {
+            const tableBodyEl = document.getElementById('fundsTableBody');
+            const row = tableBodyEl.querySelector(`tr[data-code="${code}"]`);
+            if (row) {
+                const cells = row.cells;
+                cells[6].textContent = newShare.toFixed(2); // Update shares (now in cell 6)
+            }
+        }
+
+        async function updateFundRealTimeData(code) {
+            try {
+                const gzResponse = await fetch(`/api/fund-gz/${code}`);
+                if (!gzResponse.ok) {
+                    console.error(`Failed to fetch real-time data for fund ${code}`);
+                    return;
+                }
+
+                const gzData = await gzResponse.json();
+                const estimatedValue = parseFloat(gzData.gsz || 0);
+                const time = gzData.gztime || '-';
+                const name = gzData.name || 'N/A';
+
+                // Find the row for this fund
+                const tableBodyEl = document.getElementById('fundsTableBody');
+                const row = tableBodyEl.querySelector(`tr[data-code="${code}"]`);
+
+                // Only update if the fund still exists in the table (hasn't been deleted)
+                if (row) {
+                    const cells = row.cells;
+
+                    // Get current shares from the table
+                    const share = parseFloat(cells[6].textContent) || 0; // Shares are in cell 6
+
+                    // Update name (cell 1) and base value (cell 2) from the real-time data
+                    cells[1].textContent = name; // Name
+                    // Update base value if it was a placeholder
+                    if (cells[2].textContent === '0.0000' || cells[2].textContent === '0' || cells[2].textContent === 'N/A') {
+                        // If base value was placeholder, update it with dwjz from real-time data
+                        cells[2].textContent = parseFloat(gzData.dwjz || 0).toFixed(4);
+                    } else {
+                        // If base value already exists, keep the existing value but ensure it's properly formatted
+                        const existingBaseValue = parseFloat(cells[2].textContent);
+                        if (!isNaN(existingBaseValue)) {
+                            cells[2].textContent = existingBaseValue.toFixed(4);
+                        }
+                    }
+
+                    // Calculate the change percentage between estimated value and base value
+                    const baseValue = parseFloat(cells[2].textContent) || parseFloat(gzData.dwjz) || 0;
+                    const changePercent = baseValue !== 0 ? ((estimatedValue - baseValue) / baseValue) * 100 : 0;
+
+                    // Calculate amounts based on estimated value
+                    const estimatedAmount = estimatedValue * share;
+                    const baseAmount = baseValue * share;
+                    const profitAmount = estimatedAmount - baseAmount;
+
+                    // Update the cells with real-time data
+                    cells[3].textContent = estimatedValue.toFixed(4); // Real-time estimate value
+                    cells[4].textContent = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`; // Change percentage (between est and base)
+                    cells[5].textContent = time; // Estimate time
+                    cells[7].textContent = estimatedAmount.toFixed(2); // Holdings amount
+                    cells[8].textContent = `${profitAmount >= 0 ? '+' : ''}${profitAmount.toFixed(2)}`; // Change amount
+
+                    // Update color classes for profit/loss
+                    cells[4].className = changePercent >= 0 ? 'positive' : 'negative'; // Change percentage
+                    cells[8].className = profitAmount >= 0 ? 'positive' : 'negative'; // Change amount
+                }
+            } catch (error) {
+                console.error(`Error updating real-time data for fund ${code}:`, error);
+            }
+        }
+
+        function sortTableByAmount() {
+            const tableBodyEl = document.getElementById('fundsTableBody');
+            const rows = Array.from(tableBodyEl.querySelectorAll('tr'));
+
+            // Sort rows by estimated amount (column 6)
+            rows.sort((a, b) => {
+                const amountA = parseFloat(a.cells[6].textContent) || 0;
+                const amountB = parseFloat(b.cells[6].textContent) || 0;
+                return amountB - amountA; // Descending order
+            });
+
+            // Re-append rows in sorted order
+            rows.forEach(row => tableBodyEl.appendChild(row));
+
+            // Update summary statistics after sorting
+            updateSummaryStats();
+        }
+
+        function updateSummaryStats() {
+            const tableBodyEl = document.getElementById('fundsTableBody');
+            const rows = tableBodyEl.querySelectorAll('tr');
+
+            let totalAmount = 0;
+            let totalChangeAmount = 0;
+
+            for (const row of rows) {
+                const amount = parseFloat(row.cells[6].textContent) || 0; // Holdings amount
+                const changeAmount = parseFloat(row.cells[8].textContent.replace(/[^\d.-]/g, '')) || 0; // Change amount
+
+                totalAmount += amount;
+                totalChangeAmount += changeAmount;
+            }
+
+            // Calculate total change percentage
+            const totalChangePercent = totalAmount !== 0 ? (totalChangeAmount / totalAmount) * 100 : 0;
+
+            // Update the summary elements
+            document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
+            document.getElementById('totalChangeAmount').textContent = `${totalChangeAmount >= 0 ? '+' : ''}${totalChangeAmount.toFixed(2)}`;
+            document.getElementById('totalChangePercent').textContent = `${totalChangePercent >= 0 ? '+' : ''}${totalChangePercent.toFixed(2)}%`;
+
+            // Apply color classes
+            const changePercentElement = document.getElementById('totalChangePercent');
+            const changeAmountElement = document.getElementById('totalChangeAmount');
+
+            changePercentElement.className = 'summary-value ' + (totalChangePercent >= 0 ? 'positive' : 'negative');
+            changeAmountElement.className = 'summary-value ' + (totalChangeAmount >= 0 ? 'positive' : 'negative');
+        }
+
+        // Make functions available globally for inline event handlers
+        window.removeFund = removeFund;
+        window.setShare = setShare;
+        window.loadFunds = loadFunds;
+    </script>
+</body>
+</html>

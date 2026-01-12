@@ -4,7 +4,6 @@
  */
 const cheerio = require('cheerio');
 const {getHttpContent} = require('./http.util');
-const {getHisData, setHisData} = require("./store");
 
 // 2025-12-23|3.0571|3.0571|-0.0062|-0.20%|-0.36%|-0.0110|3.0461|3.0633|2025-12-24|10:55:00
 async function getFundCurrent(code, shares = 0) {
@@ -57,10 +56,6 @@ async function getFundBaseValue(code) {
 
 // 获取基金历史汇总信息
 async function getFundHistoryStatics(code) {
-    const cacheData = getHisData(code);
-    if (cacheData) {
-        return cacheData;
-    }
     let result = {};
     try {
         const content = await getHttpContent("https://www.dayfund.cn/fundinfo/" + code + ".html");
@@ -74,9 +69,6 @@ async function getFundHistoryStatics(code) {
             hisData: await getFundHistoryData(code),
         }
     } catch (e) {
-    }
-    if (result.lastWeek && result.lastMonth && result.lastSeason && result.lastYear && result.hisData && result.hisData.length > 0) {
-        setHisData(code, result)
     }
     return result;
 }

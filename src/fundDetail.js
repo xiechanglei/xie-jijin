@@ -1,6 +1,12 @@
 const {getHttpContent} = require("./http.util");
 const cheerio = require('cheerio');
 
+/**
+ * 持仓信息
+ * @param code
+ * @param limit
+ * @return {Promise<*>}
+ */
 async function getFundDetail(code, limit = 10) {
     let result = await getHttpContent(`http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code=${code}&topline=${limit}`)
     result += "return apidata";
