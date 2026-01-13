@@ -13,7 +13,6 @@
         }
         body {
             font-family: Arial, sans-serif;
-            width: 100vw;
         }
         .container {
             width: 100%;
@@ -212,7 +211,7 @@
         window.onload = function() {
             loadFunds();
             // Set up auto-refresh every 10 minutes
-            refreshInterval = setInterval(loadFunds, 10 * 60 * 1000);
+            refreshInterval = setInterval(loadFunds, 60 * 1000);
 
             // Set up event listeners for controls
             document.getElementById('addFundBtn').addEventListener('click', addFund);
