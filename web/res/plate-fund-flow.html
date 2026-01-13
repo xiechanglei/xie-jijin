@@ -10,9 +10,7 @@
             margin: 0;
             padding: 8px 20px;
         }
-        
-        .container {
-        }
+
         .controls {
             padding: 10px;
             display: flex;
@@ -51,7 +49,7 @@
         
         th, td {
             padding: 12px;
-            text-align: left;
+            text-align: center;
             border-bottom: 1px solid #ddd;
         }
         
@@ -91,12 +89,12 @@
         }
         
         .positive {
-            color: #27ae60;
+            color: #e74c3c; /* 红色表示上涨 */
             font-weight: bold;
         }
-        
+
         .negative {
-            color: #e74c3c;
+            color: #27ae60; /* 绿色表示下跌 */
             font-weight: bold;
         }
         
@@ -114,31 +112,56 @@
         }
         
         .amount {
-            text-align: right;
+            text-align: center;
         }
-        
+
         .percent {
-            text-align: right;
+            text-align: center;
+        }
+
+        .search-container {
+            flex-grow: 1;
+            max-width: 300px;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        #searchInput:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .info{
+            margin-left: 20px;
+            font-size: 14px;
+            color: #999;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h3>板块资金流向</h3>
-        </div>
-        
         <div class="controls">
+            <h3>板块资金流向</h3>
             <div class="time-selector">
                 <button id="todayBtn" class="active">今日</button>
                 <button id="fiveDayBtn">5日</button>
                 <button id="tenDayBtn">10日</button>
             </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="搜索名称或编号...">
+            </div>
             <div class="info">
                 <span id="totalCount">共0条记录</span>
             </div>
         </div>
-        
+
         <div id="tableContainer">
             <div class="loading">正在加载数据...</div>
         </div>
@@ -157,22 +180,23 @@
             f14: { label: '名称', sortable: true },
             f12: { label: '编号', sortable: true },
             f2: { label: '股价', sortable: true },
-            f3: { label: '涨跌幅%', sortable: true },
-            f62: { label: '主力净流入(万)', sortable: true },
-            f184: { label: '主力净占比%', sortable: true },
-            f66: { label: '超大单净流入(万)', sortable: true },
-            f69: { label: '超大单净占比%', sortable: true },
-            f72: { label: '大单净流入(万)', sortable: true },
-            f75: { label: '大单净占比%', sortable: true },
-            f78: { label: '中单净流入(万)', sortable: true },
-            f81: { label: '中单净占比%', sortable: true },
-            f84: { label: '小单净流入(万)', sortable: true },
-            f87: { label: '小单净占比%', sortable: true },
+            f3: { label: '涨跌幅', sortable: true },
+            f62: { label: '主力净流入', sortable: true },
+            f184: { label: '主力净占比', sortable: true },
+            f66: { label: '超大单净流入', sortable: true },
+            f69: { label: '超大单净占比', sortable: true },
+            f72: { label: '大单净流入', sortable: true },
+            f75: { label: '大单净占比', sortable: true },
+            f78: { label: '中单净流入', sortable: true },
+            f81: { label: '中单净占比', sortable: true },
+            f84: { label: '小单净流入', sortable: true },
+            f87: { label: '小单净占比', sortable: true },
             f204: { label: '主力净流入最大股', sortable: true }
         };
 
         // 当前状态
         let currentData = [];
+        let filteredData = [];
         let currentSort = { field: null, direction: 'desc' };
         let currentPeriod = 'today';
 
@@ -182,22 +206,26 @@
         const todayBtn = document.getElementById('todayBtn');
         const fiveDayBtn = document.getElementById('fiveDayBtn');
         const tenDayBtn = document.getElementById('tenDayBtn');
+        const searchInput = document.getElementById('searchInput');
 
         // 格式化数值
         function formatNumber(num, decimals = 2) {
             if (num === undefined || num === null) return '-';
-            
-            // 如果是百分比，保留一位小数
-            if (Math.abs(num) < 100 && Math.abs(num) !== Math.floor(Math.abs(num))) {
-                return num.toFixed(2) + '%';
+
+            if (typeof num === 'number') {
+                // 对于大额资金，根据数值大小选择单位
+                const absNum = Math.abs(num);
+                if (absNum >= 100000000) { // 1亿及以上
+                    return (num / 100000000).toFixed(decimals) + '亿';
+                } else if (absNum >= 10000) { // 1万及以上
+                    return (num / 10000).toFixed(decimals) + '万';
+                } else {
+                    // 小于1万的数值，保留最多两位小数
+                    return num.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+                }
             }
-            
-            // 对于大额资金，转换为万元单位
-            if (Math.abs(num) >= 10000) {
-                return (num / 10000).toFixed(decimals) + '万';
-            }
-            
-            return num.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+
+            return String(num);
         }
 
         // 获取数据
@@ -213,12 +241,65 @@
                 }
 
                 currentData = result.data.data.diff;
-                totalCountEl.textContent = `共${currentData.length}条记录`;
+                // 初始化过滤数据
+                filteredData = [...currentData];
+                totalCountEl.textContent = `共${filteredData.length}条记录`;
 
-                renderTable(currentData);
+                renderTable(filteredData);
             } catch (error) {
                 console.error('获取数据失败:', error);
                 tableContainer.innerHTML = `<div class="error">加载数据失败: ${error.message}</div>`;
+            }
+        }
+
+        // 搜索过滤功能
+        function filterData(searchTerm) {
+            if (!searchTerm || searchTerm.trim() === '') {
+                filteredData = [...currentData];
+            } else {
+                const term = searchTerm.toLowerCase().trim();
+                filteredData = currentData.filter(item => {
+                    // 搜索名称(f14)或编号(f12)
+                    return (
+                        (item.f14 && item.f14.toLowerCase().includes(term)) ||
+                        (item.f12 && item.f12.toLowerCase().includes(term))
+                    );
+                });
+            }
+
+            // 更新计数并重新渲染表格
+            totalCountEl.textContent = `共${filteredData.length}条记录`;
+
+            // 如果当前有排序，则应用相同的排序
+            if (currentSort.field) {
+                const sortedFilteredData = [...filteredData].sort((a, b) => {
+                    let valA = a[currentSort.field];
+                    let valB = b[currentSort.field];
+
+                    // 处理数字比较
+                    if (typeof valA === 'number' && typeof valB === 'number') {
+                        return currentSort.direction === 'asc' ? valA - valB : valB - valA;
+                    }
+
+                    // 处理字符串比较
+                    if (typeof valA === 'string' && typeof valB === 'string') {
+                        return currentSort.direction === 'asc' ?
+                            valA.localeCompare(valB) :
+                            valB.localeCompare(valA);
+                    }
+
+                    // 混合类型比较
+                    valA = String(valA || '');
+                    valB = String(valB || '');
+
+                    return currentSort.direction === 'asc' ?
+                        valA.localeCompare(valB) :
+                        valB.localeCompare(valA);
+                });
+
+                renderTable(sortedFilteredData);
+            } else {
+                renderTable(filteredData);
             }
         }
 
@@ -271,16 +352,25 @@
                     // 特殊格式化
                     if (field === 'f3' || field === 'f184' || field === 'f69' || field === 'f75' || field === 'f81' || field === 'f87') {
                         // 百分比字段
-                        cellValue = formatNumber(cellValue);
-                        cellClass = cellValue && parseFloat(cellValue) >= 0 ? 'positive percent' : 'negative percent';
+                        if (typeof cellValue === 'number') {
+                            cellValue = cellValue.toFixed(2) + '%';
+                        } else {
+                            cellValue = cellValue + '%';
+                        }
+                        // 涨用红色(positive)，跌用绿色(negative)
+                        cellClass = cellValue && parseFloat(cellValue.replace('%', '')) >= 0 ? 'positive percent' : 'negative percent';
                     } else if (field === 'f2') {
-                        // 股价字段
-                        cellValue = formatNumber(cellValue, 2);
-                        cellClass = cellValue && parseFloat(item.f3) >= 0 ? 'positive' : 'negative';
+                        // 股价字段 - 不要转换为万元，正常显示
+                        cellValue = typeof cellValue === 'number' ? cellValue.toFixed(2) : cellValue;
+                        // 根据涨跌幅决定股价颜色，涨用红色，跌用绿色
+                        cellClass = item.f3 >= 0 ? 'positive' : 'negative';
                     } else if (field === 'f62' || field === 'f66' || field === 'f72' || field === 'f78' || field === 'f84') {
-                        // 资金流入字段（转换为万元）
-                        cellValue = formatNumber(cellValue / 10000, 2);
-                        cellClass = cellValue && parseFloat(cellValue) >= 0 ? 'positive amount' : 'negative amount';
+                        // 资金流入字段（原始数据是元，使用通用格式化）
+                        if (typeof cellValue === 'number') {
+                            cellValue = formatNumber(cellValue, 2);
+                        }
+                        // 资金净流入为正用红色(positive)，负用绿色(negative)
+                        cellClass = cellValue && parseFloat(String(cellValue).replace(/[万亿]/g, '')) >= 0 ? 'positive amount' : 'negative amount';
                     } else {
                         // 其他字段
                         if (typeof cellValue === 'number') {
@@ -367,6 +457,11 @@
         todayBtn.addEventListener('click', () => switchPeriod('today'));
         fiveDayBtn.addEventListener('click', () => switchPeriod('fiveDay'));
         tenDayBtn.addEventListener('click', () => switchPeriod('tenDay'));
+
+        // 添加搜索框事件监听器
+        searchInput.addEventListener('input', (e) => {
+            filterData(e.target.value);
+        });
 
         // 初始化页面
         fetchData('today');
