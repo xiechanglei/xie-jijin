@@ -175,6 +175,7 @@
                 <div class="control-group">
                     <button id="addFundBtn">添加基金</button>
                     <button id="refreshBtn">刷新数据</button>
+                    <button id="plateFlowBtn">查看板块资金流</button>
                 </div>
             </div>
         </div>
@@ -216,7 +217,12 @@
             // Set up event listeners for controls
             document.getElementById('addFundBtn').addEventListener('click', addFund);
             document.getElementById('refreshBtn').addEventListener('click', loadFunds);
+            document.getElementById('plateFlowBtn').addEventListener('click', goToPlateFlow);
         };
+
+        function goToPlateFlow() {
+            window.location.href = '/plate-fund-flow.html';
+        }
 
         async function addFund() {
             const codeInput = document.getElementById('fundCodeInput');

@@ -12,6 +12,7 @@ import {getPort} from './utils/port.util.js';
 // Import the store module to get fund data
 import {getStoredCodes, addCode, removeCode, setMoney} from '../src/store.js';
 import {getFundCurrent} from '../src/fundAnalysisEnhanced.js';
+import {getPlateFundsFlow, formatPlateFundsData} from '../src/plateFundsFlow.js';
 
 // Define __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -342,6 +343,35 @@ class WebServer {
                 res.writeHead(500, {'Content-Type': 'application/json'});
                 res.end(JSON.stringify({
                     error: 'Failed to fetch fund history data',
+                    message: error.message
+                }));
+            }
+        } else if (pathname.startsWith('/api/plate-funds-flow/')) {
+            // Extract period from the path
+            const pathParts = pathname.split('/');
+            const period = pathParts[3]; // /api/plate-funds-flow/{period}
+
+            try {
+                // Validate period
+                if (!['today', 'fiveDay', 'tenDay'].includes(period)) {
+                    res.writeHead(400, {'Content-Type': 'application/json'});
+                    res.end(JSON.stringify({error: 'Invalid period. Use: today, fiveDay, or tenDay'}));
+                    return;
+                }
+
+                // Fetch plate funds flow data
+                const data = await getPlateFundsFlow(period);
+
+                res.writeHead(200, {'Content-Type': 'application/json'});
+                res.end(JSON.stringify({
+                    success: true,
+                    data: data
+                }));
+            } catch (error) {
+                console.error(`Error fetching plate funds flow data for ${period}:`, error);
+                res.writeHead(500, {'Content-Type': 'application/json'});
+                res.end(JSON.stringify({
+                    error: 'Failed to fetch plate funds flow data',
                     message: error.message
                 }));
             }
