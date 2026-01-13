@@ -5,18 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>基金持仓列表</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
             width: 100vw;
         }
         .container {
             width: 100%;
-            margin: 0;
             padding: 15px;
-            box-sizing: border-box;
         }
         .summary {
             background: #e9f7ef;
@@ -87,23 +88,15 @@
         .delete-btn:hover {
             background: #c82333;
         }
-        .set-btn {
-            background: #28a745;
-        }
-        .set-btn:hover {
-            background: #218838;
-        }
         table {
             width: 100%;
-            box-sizing: border-box;
             border-collapse: collapse;
             margin-top: 15px;
-            table-layout: fixed; /* Fixed table layout to prevent overflow */
+            /*table-layout: fixed; !* Fixed table layout to prevent overflow *!*/
         }
         th, td {
             padding: 8px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -112,16 +105,16 @@
             background: transparent; /* Remove header background */
         }
         tr:hover {
-            background-color: #f9f9f9;
+            background-color: #f1f1f1 !important;
         }
         tbody tr:nth-child(even) {
-            background-color: transparent; /* Remove alternating row colors */
+            background-color: transparent;
         }
         tbody tr:nth-child(odd) {
-            background-color: transparent; /* Remove alternating row colors */
+            background: #fafafa;
         }
         .code-col { width: 6%; }
-        .name-col { width: 15%; }
+        .name-col { width: 16%; }
         .base-col { width: 6%; }
         .estimate-col { width: 6%; }
         .change-percent-col { width: 6%; }
@@ -129,7 +122,7 @@
         .shares-col { width: 8%; }
         .amount-col { width: 8%; }
         .change-amount-col { width: 8%; }
-        .action-col { width: 13%; }
+        .action-col { width: 4%; }
         .error {
             color: #dc3545;
             padding: 10px;
@@ -137,9 +130,23 @@
             border-radius: 4px;
             margin: 10px 0;
         }
-        .action-cell {
-            display: flex;
-            gap: 5px;
+        .set-shares-btn {
+            background: transparent;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .set-shares-btn:hover {
+            color: #007bff;
+            background: transparent;
+        }
+
+        .gund-link{
+            cursor: pointer;
+            color: #007bff;
         }
     </style>
 </head>
@@ -163,8 +170,8 @@
 
             <div class="controls">
                 <div class="control-group">
-                    <input type="text" id="fundCodeInput" placeholder="基金代码">
-                    <input type="number" id="fundShareInput" placeholder="持仓份额" step="0.01">
+                    <input type="text" id="fundCodeInput" placeholder="基金代码" />
+                    <input type="number" id="fundShareInput" placeholder="持仓份额" step="0.01" />
                 </div>
                 <div class="control-group">
                     <button id="addFundBtn">添加基金</button>
@@ -187,7 +194,7 @@
                     <th class="shares-col">持仓份额</th>
                     <th class="amount-col">持仓金额</th>
                     <th class="change-amount-col">涨跌金额</th>
-                    <th class="action-col">操作</th>
+                    <th class="action-col"></th>
                 </tr>
             </thead>
             <tbody id="fundsTableBody">
@@ -362,7 +369,7 @@
                     if (existingRow) {
                         // Update existing fund's shares
                         const cells = existingRow.cells;
-                        cells[6].textContent = (fund.shares || 0).toFixed(2); // Update shares (now in cell 6)
+                        cells[6].querySelector('.shares-value').textContent = (fund.shares || 0).toFixed(2); // Update shares (now in cell 6)
                     } else {
                         // Add new fund to table with placeholder data
                         addFundToTable(fund.code, fund.shares || 0, 'N/A', 0);
@@ -413,17 +420,22 @@
 
             row.innerHTML = `
                 <td>${code}</td>
-                <td>${name}</td>
+                <td class="gund-link"><a onclick="openFundDetail('${code}')"><span>${name}</span> <svg class="icon" style="width: 1em;height: 1em;vertical-align: middle;fill: currentColor;overflow: hidden;" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M574 665.4c-3.1-3.1-8.2-3.1-11.3 0L446.5 781.6c-53.8 53.8-144.6 59.5-204 0-59.5-59.5-53.8-150.2 0-204l116.2-116.2c3.1-3.1 3.1-8.2 0-11.3l-39.8-39.8c-3.1-3.1-8.2-3.1-11.3 0L191.4 526.5c-84.6 84.6-84.6 221.5 0 306s221.5 84.6 306 0l116.2-116.2c3.1-3.1 3.1-8.2 0-11.3L574 665.4zM832.6 191.4c-84.6-84.6-221.5-84.6-306 0L410.3 307.6c-3.1 3.1-3.1 8.2 0 11.3l39.7 39.7c3.1 3.1 8.2 3.1 11.3 0l116.2-116.2c53.8-53.8 144.6-59.5 204 0 59.5 59.5 53.8 150.2 0 204L665.3 562.6c-3.1 3.1-3.1 8.2 0 11.3l39.8 39.8c3.1 3.1 8.2 3.1 11.3 0l116.2-116.2c84.5-84.6 84.5-221.5 0-306.1zM610.1 372.3c-3.1-3.1-8.2-3.1-11.3 0L372.3 598.7c-3.1 3.1-3.1 8.2 0 11.3l39.6 39.6c3.1 3.1 8.2 3.1 11.3 0l226.4-226.4c3.1-3.1 3.1-8.2 0-11.3l-39.5-39.6z"></path></svg></a></td>
                 <td>${baseValue.toFixed(4)}</td>
                 <td>-</td>
                 <td>-</td>
                 <td>-</td>
-                <td>${shares.toFixed(2)}</td>
+                <td class="shares-cell">
+                    <span class="shares-value">${shares.toFixed(2)}</span>
+                    <button class="set-shares-btn" onclick="setShare('${code}')">
+                        <svg class="icon" style="width: 1em; height: 1em; vertical-align: middle; fill: currentColor; overflow: hidden;" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M656 310.4c35.2-38.4 76.8-96 76.8-156.8 0-35.2-9.6-64-32-86.4-41.6-41.6-115.2-41.6-198.4-41.6l-22.4 0c-12.8 0-25.6 0-38.4 0-76.8 0-140.8-3.2-182.4 38.4-22.4 22.4-32 51.2-32 89.6 0 86.4 76.8 163.2 112 192 12.8 12.8 35.2 9.6 44.8-3.2 12.8-12.8 9.6-35.2-3.2-44.8-54.4-48-89.6-102.4-89.6-144 0-32 9.6-41.6 12.8-44.8 22.4-19.2 76.8-19.2 137.6-19.2 12.8 0 25.6 0 41.6 0l25.6 0c67.2 0 131.2 0 153.6 22.4C662.4 115.2 672 124.8 672 153.6c0 38.4-35.2 92.8-92.8 140.8-9.6 6.4-12.8 19.2-9.6 28.8 3.2 9.6 9.6 19.2 19.2 25.6 118.4 44.8 243.2 166.4 243.2 332.8 0 156.8-96 214.4-352 214.4s-352-57.6-352-214.4c0-96 44.8-192 124.8-262.4 12.8-12.8 16-32 3.2-44.8-12.8-12.8-32-16-44.8-3.2-92.8 83.2-147.2 195.2-147.2 310.4 0 278.4 281.6 278.4 416 278.4s416 0 416-278.4C899.2 528 800 384 656 310.4zM611.2 467.2c12.8-12.8 12.8-32 0-44.8-12.8-12.8-32-12.8-44.8 0l-80 76.8-80-76.8c-12.8-12.8-32-12.8-44.8 0-12.8 12.8-12.8 32 0 44.8l89.6 86.4 0 19.2-64 0c-19.2 0-32 12.8-32 32s12.8 32 32 32l64 0 0 32-64 0c-19.2 0-32 12.8-32 32s12.8 32 32 32l64 0L451.2 800c0 19.2 12.8 32 32 32s32-12.8 32-32l0-67.2 64 0c19.2 0 32-12.8 32-32s-12.8-32-32-32l-64 0 0-32 64 0c19.2 0 32-12.8 32-32s-12.8-32-32-32l-64 0 0-12.8L611.2 467.2z"></path>
+                        </svg>
+                    </button>
+                </td>
                 <td>-</td>
                 <td>-</td>
                 <td class="action-cell">
-                    <button class="set-btn" onclick="setShare('${code}')">设置份额</button>
-                    <button class="set-btn" onclick="openFundDetail('${code}')">详情</button>
                     <button class="delete-btn" onclick="removeFund('${code}')">删除</button>
                 </td>
             `;
@@ -444,7 +456,7 @@
             const row = tableBodyEl.querySelector(`tr[data-code="${code}"]`);
             if (row) {
                 const cells = row.cells;
-                cells[6].textContent = newShare.toFixed(2); // Update shares (now in cell 6)
+                cells[6].querySelector('.shares-value').textContent = newShare.toFixed(2); // Update shares (now in cell 6)
             }
         }
 
@@ -470,10 +482,10 @@
                     const cells = row.cells;
 
                     // Get current shares from the table
-                    const share = parseFloat(cells[6].textContent) || 0; // Shares are in cell 6
+                    const share = parseFloat(cells[6].querySelector('.shares-value').textContent) || 0; // Shares are in cell 6
 
                     // Update name (cell 1) and base value (cell 2) from the real-time data
-                    cells[1].textContent = name; // Name
+                    cells[1].querySelector("span").textContent = name;
                     // Update base value if it was a placeholder
                     if (cells[2].textContent === '0.0000' || cells[2].textContent === '0' || cells[2].textContent === 'N/A') {
                         // If base value was placeholder, update it with dwjz from real-time data
@@ -515,10 +527,10 @@
             const tableBodyEl = document.getElementById('fundsTableBody');
             const rows = Array.from(tableBodyEl.querySelectorAll('tr'));
 
-            // Sort rows by estimated amount (column 6)
+            // Sort rows by estimated amount (column 7 - 持仓金额)
             rows.sort((a, b) => {
-                const amountA = parseFloat(a.cells[6].textContent) || 0;
-                const amountB = parseFloat(b.cells[6].textContent) || 0;
+                const amountA = parseFloat(a.cells[7].textContent) || 0;
+                const amountB = parseFloat(b.cells[7].textContent) || 0;
                 return amountB - amountA; // Descending order
             });
 

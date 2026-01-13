@@ -62,36 +62,67 @@ class WebServer {
             return;
         }
 
-        // Serve static files from web/res directory
-        let filePath = path.join(__dirname, 'res', pathname);
+        // Handle requests for node_modules resources
+        if (pathname.startsWith('/node_lib/')) {
+            // Map /node_lib/ to node_modules directory
+            const modulePath = pathname.substring('/node_lib/'.length);
+            // Use the project's node_modules directory relative to the server file
+            let moduleFilePath = path.join(__dirname, '..', '..', modulePath);
 
-        // If requesting root path, serve index.html
-        if (pathname === '/' || pathname === '') {
-            filePath = path.join(__dirname, 'res', 'index.html');
-        }
-
-        // Check if file exists
-        fs.access(filePath, fs.constants.F_OK, (err) => {
-            if (err) {
-                // File not found, send 404
-                res.writeHead(404, {'Content-Type': 'text/html'});
-                res.end('<h1>404 Not Found</h1>');
-                return;
-            }
-
-            // Read and serve the file
-            fs.readFile(filePath, (err, content) => {
+            // Check if file exists
+            fs.access(moduleFilePath, fs.constants.F_OK, (err) => {
                 if (err) {
-                    res.writeHead(500);
-                    res.end('Server Error');
+                    // File not found, send 404
+                    res.writeHead(404, {'Content-Type': 'text/html'});
+                    res.end('<h1>404 Not Found</h1>');
                     return;
                 }
 
-                const contentType = this.getMimeType(filePath);
-                res.writeHead(200, {'Content-Type': contentType});
-                res.end(content, 'utf-8');
+                // Read and serve the file
+                fs.readFile(moduleFilePath, (err, content) => {
+                    if (err) {
+                        res.writeHead(500);
+                        res.end('Server Error');
+                        return;
+                    }
+
+                    const contentType = this.getMimeType(moduleFilePath);
+                    res.writeHead(200, {'Content-Type': contentType});
+                    res.end(content, 'utf-8');
+                });
             });
-        });
+        } else {
+            // Serve static files from web/res directory
+            let filePath = path.join(__dirname, 'res', pathname);
+
+            // If requesting root path, serve index.html
+            if (pathname === '/' || pathname === '') {
+                filePath = path.join(__dirname, 'res', 'index.html');
+            }
+
+            // Check if file exists
+            fs.access(filePath, fs.constants.F_OK, (err) => {
+                if (err) {
+                    // File not found, send 404
+                    res.writeHead(404, {'Content-Type': 'text/html'});
+                    res.end('<h1>404 Not Found</h1>');
+                    return;
+                }
+
+                // Read and serve the file
+                fs.readFile(filePath, (err, content) => {
+                    if (err) {
+                        res.writeHead(500);
+                        res.end('Server Error');
+                        return;
+                    }
+
+                    const contentType = this.getMimeType(filePath);
+                    res.writeHead(200, {'Content-Type': contentType});
+                    res.end(content, 'utf-8');
+                });
+            });
+        }
     }
 
     /**

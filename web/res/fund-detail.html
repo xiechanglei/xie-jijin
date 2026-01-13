@@ -241,7 +241,7 @@
             async function loadEChartsAndHistoryData(fundCode) {
                 // 动态加载 ECharts 库
                 const script = document.createElement('script');
-                script.src = 'https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js';
+                script.src = '/node_lib/echarts/dist/echarts.min.js';
                 document.head.appendChild(script);
 
                 script.onload = async function() {
