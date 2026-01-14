@@ -203,6 +203,8 @@
 
     // 缓存上一次渲染的数据，用于diff比较
     let previousRenderedData = [];
+    let previousUpdatePeriod = "";
+    let previousUpdateData = []
 
     let dataCache = {};
 
@@ -319,7 +321,7 @@
 
             // 添加排序事件监听器到表头
             document.querySelectorAll('th.sortable').forEach(th => {
-                th.addEventListener('click', () => handleSort( th.getAttribute('data-field')));
+                th.addEventListener('click', () => handleSort(th.getAttribute('data-field')));
             });
         }
 
@@ -357,6 +359,8 @@
 
         // 更新缓存数据
         previousRenderedData = [...sortedData];
+        previousUpdatePeriod = currentPeriod;
+        previousUpdateData = [...currentData];
     }
 
     // 使用diff算法更新表格行
@@ -425,6 +429,18 @@
                 }
                 // 资金净流入为正用红色(positive)，负用绿色(negative)
                 cellClass = cellValue && parseFloat(String(cellValue).replace(/[万亿]/g, '')) >= 0 ? 'positive amount' : 'negative amount';
+                // 显示与上次的差额
+                if (currentPeriod === previousUpdatePeriod) {
+                    const lastItem = previousUpdateData.find((ol) => ol.code === item.code);
+                    console.log(lastItem);
+                    if (lastItem) {
+                        const sub = item[field] - lastItem[field];
+                        if (sub !== 0) {
+                            const fsub = formatNumber(sub, 2)
+                            cellValue += " (" + (sub > 0 ? "+" + fsub : fsub) + ")";
+                        }
+                    }
+                }
             } else {
                 // 其他字段
                 if (typeof cellValue === 'number') {
