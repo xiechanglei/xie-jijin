@@ -17,12 +17,12 @@
             gap: 15px;
             align-items: center;
         }
-        
+
         .time-selector {
             display: flex;
             gap: 10px;
         }
-        
+
         button {
             padding: 8px 16px;
             border: none;
@@ -32,27 +32,27 @@
             color: white;
             font-size: 14px;
         }
-        
+
         button:hover {
             background-color: #0056b3;
         }
-        
+
         button.active {
             background-color: #dc3545;
         }
-        
+
         table {
             width: 100%;
             font-size: 13px;
             border-collapse: collapse;
         }
-        
+
         th, td {
             padding: 12px;
             text-align: center;
             border-bottom: 1px solid #ddd;
         }
-        
+
         th {
             background-color: #34495e;
             color: white;
@@ -60,34 +60,34 @@
             position: relative;
             user-select: none;
         }
-        
+
         th:hover {
             background-color: #2c3e50;
         }
-        
+
         th.sortable::after {
             content: " ↕";
             opacity: 0.5;
         }
-        
+
         th.sort-asc::after {
             content: " ↑";
             opacity: 1;
         }
-        
+
         th.sort-desc::after {
             content: " ↓";
             opacity: 1;
         }
-        
+
         tr:nth-child(even) {
             background-color: #f2f2f2;
         }
-        
+
         tr:hover {
             background-color: #e8f4f8;
         }
-        
+
         .positive {
             color: #e74c3c; /* 红色表示上涨 */
             font-weight: bold;
@@ -97,20 +97,14 @@
             color: #27ae60; /* 绿色表示下跌 */
             font-weight: bold;
         }
-        
-        .loading {
-            text-align: center;
-            padding: 20px;
-            font-size: 18px;
-        }
-        
+
         .error {
             color: #e74c3c;
             text-align: center;
             padding: 20px;
             font-size: 18px;
         }
-        
+
         .amount {
             text-align: center;
         }
@@ -138,7 +132,7 @@
             box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
         }
 
-        .info{
+        .info {
             margin-left: 20px;
             font-size: 14px;
             color: #999;
@@ -146,187 +140,165 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="controls">
-            <h3>板块资金流向</h3>
-            <div class="time-selector">
-                <button id="todayBtn" class="active">今日</button>
-                <button id="fiveDayBtn">5日</button>
-                <button id="tenDayBtn">10日</button>
-            </div>
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="搜索名称或编号...">
-            </div>
-            <div class="info">
-                <span id="totalCount">共0条记录</span>
-            </div>
+<div class="container">
+    <div class="controls">
+        <h3>板块资金流向</h3>
+        <div class="time-selector">
+            <button id="todayBtn" class="active">今日</button>
+            <button id="fiveDayBtn">5日</button>
+            <button id="tenDayBtn">10日</button>
         </div>
-
-        <div id="tableContainer">
-            <div class="loading">正在加载数据...</div>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="搜索名称或编号...">
+        </div>
+        <div class="info">
+            <span id="totalCount">共0条记录</span>
         </div>
     </div>
 
-    <script>
-        // API端点配置 - 使用后端代理
-        const API_ENDPOINTS = {
-            today: '/api/plate-funds-flow/today',
-            fiveDay: '/api/plate-funds-flow/fiveDay',
-            tenDay: '/api/plate-funds-flow/tenDay'
-        };
+    <div id="tableContainer"/>
+</div>
 
-        // 字段映射
-        const FIELD_MAP = {
-            name: { label: '名称', sortable: true },
-            code: { label: '编号', sortable: true },
-            price: { label: '股价', sortable: true },
-            changePercent: { label: '涨跌幅', sortable: true },
-            mainNetInflow: { label: '主力净流入', sortable: true },
-            mainInflowRatio: { label: '主力净占比', sortable: true },
-            superLargeNetInflow: { label: '超大单净流入', sortable: true },
-            superLargeInflowRatio: { label: '超大单净占比', sortable: true },
-            largeNetInflow: { label: '大单净流入', sortable: true },
-            largeInflowRatio: { label: '大单净占比', sortable: true },
-            midNetInflow: { label: '中单净流入', sortable: true },
-            midInflowRatio: { label: '中单净占比', sortable: true },
-            smallNetInflow: { label: '小单净流入', sortable: true },
-            smallInflowRatio: { label: '小单净占比', sortable: true },
-            topStock: { label: '主力净流入最大股', sortable: true }
-        };
+<script>
+    // API端点配置 - 使用后端代理
+    const API_ENDPOINTS = {
+        today: '/api/plate-funds-flow/today',
+        fiveDay: '/api/plate-funds-flow/fiveDay',
+        tenDay: '/api/plate-funds-flow/tenDay'
+    };
 
-        // 当前状态
-        let currentData = [];
-        let filteredData = [];
-        let currentSort = { field: null, direction: 'desc' };
-        let currentPeriod = 'today';
+    // 字段映射
+    const FIELD_MAP = {
+        name: {label: '名称', sortable: true},
+        code: {label: '编号', sortable: true},
+        price: {label: '股价', sortable: true},
+        changePercent: {label: '涨跌幅', sortable: true},
+        mainNetInflow: {label: '主力净流入', sortable: true},
+        mainInflowRatio: {label: '主力净占比', sortable: true},
+        superLargeNetInflow: {label: '超大单净流入', sortable: true},
+        superLargeInflowRatio: {label: '超大单净占比', sortable: true},
+        largeNetInflow: {label: '大单净流入', sortable: true},
+        largeInflowRatio: {label: '大单净占比', sortable: true},
+        midNetInflow: {label: '中单净流入', sortable: true},
+        midInflowRatio: {label: '中单净占比', sortable: true},
+        smallNetInflow: {label: '小单净流入', sortable: true},
+        smallInflowRatio: {label: '小单净占比', sortable: true},
+        topStock: {label: '主力净流入最大股', sortable: true}
+    };
 
-        // DOM元素
-        const tableContainer = document.getElementById('tableContainer');
-        const totalCountEl = document.getElementById('totalCount');
-        const todayBtn = document.getElementById('todayBtn');
-        const fiveDayBtn = document.getElementById('fiveDayBtn');
-        const tenDayBtn = document.getElementById('tenDayBtn');
-        const searchInput = document.getElementById('searchInput');
+    // 当前状态
+    let currentData = [];
+    let filteredData = [];
+    let currentSort = {field: null, direction: 'desc'};
+    let currentPeriod = 'today';
+    let currentFilterWord = "";
 
-        // 格式化数值
-        function formatNumber(num, decimals = 2) {
-            if (num === undefined || num === null) return '-';
+    // DOM元素
+    const tableContainer = document.getElementById('tableContainer');
+    const totalCountEl = document.getElementById('totalCount');
+    const todayBtn = document.getElementById('todayBtn');
+    const fiveDayBtn = document.getElementById('fiveDayBtn');
+    const tenDayBtn = document.getElementById('tenDayBtn');
+    const searchInput = document.getElementById('searchInput');
 
-            if (typeof num === 'number') {
-                // 对于大额资金，根据数值大小选择单位
-                const absNum = Math.abs(num);
-                if (absNum >= 100000000) { // 1亿及以上
-                    return (num / 100000000).toFixed(decimals) + '亿';
-                } else if (absNum >= 10000) { // 1万及以上
-                    return (num / 10000).toFixed(decimals) + '万';
-                } else {
-                    // 小于1万的数值，保留最多两位小数
-                    return num.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-                }
-            }
+    // 缓存上一次渲染的数据，用于diff比较
+    let previousRenderedData = [];
 
-            return String(num);
+    let dataCache = {};
+
+    async function getDataFromCache(period) {
+        if (dataCache[period]) {
+            return dataCache[period];
         }
+        const response = await fetch(API_ENDPOINTS[period]);
+        dataCache[period] = await response.json();
+        return dataCache[period];
+    }
 
-        // 获取数据
-        async function fetchData(period) {
-            try {
-                tableContainer.innerHTML = '<div class="loading">正在加载数据...</div>';
 
-                const response = await fetch(API_ENDPOINTS[period]);
-                const result = await response.json();
+    // 格式化数值
+    function formatNumber(num, decimals = 2) {
+        if (num === undefined || num === null) return '-';
 
-                if (!result.success || !result.data?.data?.diff) {
-                    throw new Error(result.error || '数据获取失败');
-                }
-
-                currentData = formatPlateFundsData(result.data.data.diff,period);
-                // 初始化过滤数据
-                filteredData = [...currentData];
-                totalCountEl.textContent = `共${filteredData.length}条记录`;
-
-                renderTable(filteredData);
-            } catch (error) {
-                console.error('获取数据失败:', error);
-                tableContainer.innerHTML = `<div class="error">加载数据失败: ${error.message}</div>`;
-            }
-        }
-
-        // 搜索过滤功能
-        function filterData(searchTerm) {
-            if (!searchTerm || searchTerm.trim() === '') {
-                filteredData = [...currentData];
+        if (typeof num === 'number') {
+            // 对于大额资金，根据数值大小选择单位
+            const absNum = Math.abs(num);
+            if (absNum >= 100000000) { // 1亿及以上
+                return (num / 100000000).toFixed(decimals) + '亿';
+            } else if (absNum >= 10000) { // 1万及以上
+                return (num / 10000).toFixed(decimals) + '万';
             } else {
-                const term = searchTerm.toLowerCase().trim();
-                filteredData = currentData.filter(item => {
-                    // 搜索名称(f14)或编号(f12)
-                    return (
-                        (item.name && item.name.toLowerCase().includes(term)) ||
-                        (item.code && item.code.toLowerCase().includes(term))
-                    );
-                });
-            }
-
-            // 更新计数并重新渲染表格
-            totalCountEl.textContent = `共${filteredData.length}条记录`;
-
-            // 如果当前有排序，则应用相同的排序
-            if (currentSort.field) {
-                const sortedFilteredData = [...filteredData].sort((a, b) => {
-                    let valA = a[currentSort.field];
-                    let valB = b[currentSort.field];
-
-                    // 处理数字比较
-                    if (typeof valA === 'number' && typeof valB === 'number') {
-                        return currentSort.direction === 'asc' ? valA - valB : valB - valA;
-                    }
-
-                    // 处理字符串比较
-                    if (typeof valA === 'string' && typeof valB === 'string') {
-                        return currentSort.direction === 'asc' ?
-                            valA.localeCompare(valB) :
-                            valB.localeCompare(valA);
-                    }
-
-                    // 混合类型比较
-                    valA = String(valA || '');
-                    valB = String(valB || '');
-
-                    return currentSort.direction === 'asc' ?
-                        valA.localeCompare(valB) :
-                        valB.localeCompare(valA);
-                });
-
-                renderTable(sortedFilteredData);
-            } else {
-                renderTable(filteredData);
+                // 小于1万的数值，保留最多两位小数
+                return num.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
             }
         }
 
-        // 渲染表格
-        function renderTable(data) {
-            if (!data || data.length === 0) {
-                tableContainer.innerHTML = '<div class="error">暂无数据</div>';
-                return;
+        return String(num);
+    }
+
+    // 获取数据
+    async function fetchData() {
+        try {
+            // 显示加载状态但保留表格结构
+            totalCountEl.textContent = '正在加载数据...';
+            const result = await getDataFromCache(currentPeriod);
+
+            if (!result.success || !result.data?.data?.diff) {
+                throw new Error(result.error || '数据获取失败');
             }
 
-            // 创建表头
+            currentData = formatPlateFundsData(result.data.data.diff, currentPeriod);
+            // 初始化过滤数据
+            filterData();
+        } catch (error) {
+            console.error('获取数据失败:', error);
+            totalCountEl.textContent = '加载数据失败';
+        }
+    }
+
+    // 搜索过滤功能
+    function filterData() {
+        if (!currentFilterWord || currentFilterWord.trim() === '') {
+            filteredData = [...currentData];
+        } else {
+            const term = currentFilterWord.toLowerCase().trim();
+            filteredData = currentData.filter(item => {
+                // 搜索名称(f14)或编号(f12)
+                return (
+                    (item.name && item.name.toLowerCase().includes(term)) ||
+                    (item.code && item.code.toLowerCase().includes(term))
+                );
+            });
+        }
+
+        // 更新计数并重新渲染表格
+        totalCountEl.textContent = `共${filteredData.length}条记录`;
+
+        renderTable();
+    }
+
+    // 渲染表格
+    function renderTable() {
+        // 检查是否已存在表格，如果没有则创建包含表头的完整表格
+        let tableElement = tableContainer.querySelector('table');
+        if (!tableElement) {
+            // 创建完整的表格结构（包含表头）
             let tableHTML = `
                 <table>
                     <thead>
                         <tr>
             `;
-            
+
             for (const [field, config] of Object.entries(FIELD_MAP)) {
                 const className = config.sortable ? 'sortable' : '';
-                const sortClass = 
-                    currentSort.field === field ? 
-                    (currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc') : 
-                    '';
-                    
+                const sortClass =
+                    currentSort.field === field ?
+                        (currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc') :
+                        '';
+
                 tableHTML += `
-                    <th 
-                        class="${className} ${sortClass}" 
+                    <th
+                        class="${className} ${sortClass}"
                         data-field="${field}"
                         title="点击排序"
                     >
@@ -334,206 +306,311 @@
                     </th>
                 `;
             }
-            
+
             tableHTML += `
                         </tr>
                     </thead>
-                    <tbody>
-            `;
-            
-            // 创建表格内容
-            data.forEach(item => {
-                tableHTML += '<tr>';
-                
-                for (const [field] of Object.entries(FIELD_MAP)) {
-                    let cellValue = item[field];
-                    let cellClass = '';
-                    
-                    // 特殊格式化
-                    if (field === 'changePercent' || field === 'mainInflowRatio' || field === 'superLargeInflowRatio' || field === 'largeInflowRatio' || field === 'midInflowRatio' || field === 'smallInflowRatio') {
-                        // 百分比字段
-                        if (typeof cellValue === 'number') {
-                            cellValue = cellValue.toFixed(2) + '%';
-                        } else {
-                            cellValue = cellValue + '%';
-                        }
-                        // 涨用红色(positive)，跌用绿色(negative)
-                        cellClass = cellValue && parseFloat(cellValue.replace('%', '')) >= 0 ? 'positive percent' : 'negative percent';
-                    } else if (field === 'price') {
-                        // 股价字段 - 不要转换为万元，正常显示
-                        cellValue = typeof cellValue === 'number' ? cellValue.toFixed(2) : cellValue;
-                        // 根据涨跌幅决定股价颜色，涨用红色，跌用绿色
-                        cellClass = item.changePercent >= 0 ? 'positive' : 'negative';
-                    } else if (field === 'mainNetInflow' || field === 'superLargeNetInflow' || field === 'largeNetInflow' || field === "midNetInflow" || field === 'smallNetInflow') {
-                        // 资金流入字段（原始数据是元，使用通用格式化）
-                        if (typeof cellValue === 'number') {
-                            cellValue = formatNumber(cellValue, 2);
-                        }
-                        // 资金净流入为正用红色(positive)，负用绿色(negative)
-                        cellClass = cellValue && parseFloat(String(cellValue).replace(/[万亿]/g, '')) >= 0 ? 'positive amount' : 'negative amount';
-                    } else {
-                        // 其他字段
-                        if (typeof cellValue === 'number') {
-                            cellValue = formatNumber(cellValue, 2);
-                        }
-                    }
-                    
-                    tableHTML += `<td class="${cellClass}">${cellValue || '-'}</td>`;
-                }
-                
-                tableHTML += '</tr>';
-            });
-            
-            tableHTML += `
+                    <tbody id="tableBody">
                     </tbody>
                 </table>
             `;
-            
+
             tableContainer.innerHTML = tableHTML;
-            
-            // 添加排序事件监听器
+
+            // 添加排序事件监听器到表头
             document.querySelectorAll('th.sortable').forEach(th => {
-                th.addEventListener('click', () => {
-                    const field = th.getAttribute('data-field');
-                    handleSort(field);
-                });
+                th.addEventListener('click', () => handleSort( th.getAttribute('data-field')));
             });
         }
 
-        // 处理排序
-        function handleSort(field) {
-            // 如果点击的是同一个字段，则切换排序方向
-            if (currentSort.field === field) {
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                // 点击新字段，默认降序
-                currentSort.field = field;
-                currentSort.direction = 'desc';
+        // 获取tbody元素用于更新行数据
+        const tbody = tableContainer.querySelector('#tableBody');
+
+        // 执行排序
+        const sortedData = [...filteredData].sort((a, b) => {
+            let valA = a[currentSort.field];
+            let valB = b[currentSort.field];
+
+            // 处理数字比较
+            if (typeof valA === 'number' && typeof valB === 'number') {
+                return currentSort.direction === 'asc' ? valA - valB : valB - valA;
             }
-            
-            // 执行排序
-            const sortedData = [...currentData].sort((a, b) => {
-                let valA = a[field];
-                let valB = b[field];
-                
-                // 处理数字比较
-                if (typeof valA === 'number' && typeof valB === 'number') {
-                    return currentSort.direction === 'asc' ? valA - valB : valB - valA;
-                }
-                
-                // 处理字符串比较
-                if (typeof valA === 'string' && typeof valB === 'string') {
-                    return currentSort.direction === 'asc' ? 
-                        valA.localeCompare(valB) : 
-                        valB.localeCompare(valA);
-                }
-                
-                // 混合类型比较
-                valA = String(valA || '');
-                valB = String(valB || '');
-                
-                return currentSort.direction === 'asc' ? 
-                    valA.localeCompare(valB) : 
+
+            // 处理字符串比较
+            if (typeof valA === 'string' && typeof valB === 'string') {
+                return currentSort.direction === 'asc' ?
+                    valA.localeCompare(valB) :
                     valB.localeCompare(valA);
-            });
-            
-            renderTable(sortedData);
-        }
+            }
 
-        // 切换时间周期
-        function switchPeriod(period) {
-            currentPeriod = period;
-            
-            // 更新按钮状态
-            todayBtn.classList.toggle('active', period === 'today');
-            fiveDayBtn.classList.toggle('active', period === 'fiveDay');
-            tenDayBtn.classList.toggle('active', period === 'tenDay');
-            
-            // 获取新数据
-            fetchData(period);
-        }
+            // 混合类型比较
+            valA = String(valA || '');
+            valB = String(valB || '');
 
-        // 初始化事件监听器
-        todayBtn.addEventListener('click', () => switchPeriod('today'));
-        fiveDayBtn.addEventListener('click', () => switchPeriod('fiveDay'));
-        tenDayBtn.addEventListener('click', () => switchPeriod('tenDay'));
-
-        // 添加搜索框事件监听器
-        searchInput.addEventListener('input', (e) => {
-            filterData(e.target.value);
+            return currentSort.direction === 'asc' ?
+                valA.localeCompare(valB) :
+                valB.localeCompare(valA);
         });
 
+        // 使用diff算法更新表格行
+        updateTableRows(tbody, sortedData);
 
-        /**
-         * 格式化板块资金流数据，便于前端显示
-         * @param {Array} diffData - 来自API的diff数组
-         * @returns {Array} 格式化后的数据
-         */
-        function formatPlateFundsData(diffData,period) {
-            if (!Array.isArray(diffData)) {
-                return [];
-            }
-            if(period === 'today') {
-                return diffData.map(item => ({
-                    code: item.f12,           // 板块代码
-                    name: item.f14,           // 板块名称
-                    price: item.f2,           // 板块股价
-                    changePercent: item.f3,   // 涨跌幅%
-                    mainNetInflow: item.f62,  // 主力净流入-净额
-                    mainInflowRatio: item.f184, // 主力流入-净占比%
-                    superLargeNetInflow: item.f66, // 超大单净流入-净额
-                    superLargeInflowRatio: item.f69, // 超大单净流入-净占比%
-                    largeNetInflow: item.f72,       // 大单净流入-净额
-                    largeInflowRatio: item.f75,     // 大单净流入-净占比%
-                    midNetInflow: item.f78,         // 中单净流入-净额
-                    midInflowRatio: item.f81,       // 中单净流入-净占比%
-                    smallNetInflow: item.f84,       // 小单净流入-净额
-                    smallInflowRatio: item.f87,     // 小单净流入-净占比%
-                    topStock: item.f204,            // 主力净流入最大股
-                    topStockCode: item.f205         // 主力净流入最大股代码
-                }));
-            }else if (period === 'fiveDay') {
-                return diffData.map(item => ({
-                    code: item.f12,           // 板块代码
-                    name: item.f14,           // 板块名称
-                    price: item.f2,           // 板块股价
-                    changePercent: item.f109,   // 涨跌幅%
-                    mainNetInflow: item.f164,  // 主力净流入-净额
-                    mainInflowRatio: item.f165, // 主力流入-净占比%
-                    superLargeNetInflow: item.f166, // 超大单净流入-净额
-                    superLargeInflowRatio: item.f167, // 超大单净流入-净占比%
-                    largeNetInflow: item.f168,       // 大单净流入-净额
-                    largeInflowRatio: item.f169,     // 大单净流入-净占比%
-                    midNetInflow: item.f170,         // 中单净流入-净额
-                    midInflowRatio: item.f171,       // 中单净流入-净占比%
-                    smallNetInflow: item.f172,       // 小单净流入-净额
-                    smallInflowRatio: item.f173,     // 小单净流入-净占比%
-                    topStock: item.f257,            // 主力净流入最大股
-                    topStockCode: item.f258         // 主力净流入最大股代码
-                }));
-            }else{
-                return diffData.map(item => ({
-                    code: item.f12,           // 板块代码
-                    name: item.f14,           // 板块名称
-                    price: item.f2,           // 板块股价
-                    changePercent: item.f160,   // 涨跌幅%
-                    mainNetInflow: item.f174,  // 主力净流入-净额
-                    mainInflowRatio: item.f175, // 主力流入-净占比%
-                    superLargeNetInflow: item.f176, // 超大单净流入-净额
-                    superLargeInflowRatio: item.f177, // 超大单净流入-净占比%
-                    largeNetInflow: item.f178,       // 大单净流入-净额
-                    largeInflowRatio: item.f179,     // 大单净流入-净占比%
-                    midNetInflow: item.f180,         // 中单净流入-净额
-                    midInflowRatio: item.f181,       // 中单净流入-净占比%
-                    smallNetInflow: item.f182,       // 小单净流入-净额
-                    smallInflowRatio: item.f183,     // 小单净流入-净占比%
-                    topStock: item.f260,            // 主力净流入最大股
-                    topStockCode: item.f261         // 主力净流入最大股代码
-                }));
+        // 更新缓存数据
+        previousRenderedData = [...sortedData];
+    }
+
+    // 使用diff算法更新表格行
+    function updateTableRows(tbody, newData) {
+        // 获取现有的所有行
+        const existingRows = Array.from(tbody.querySelectorAll('tr'));
+        const existingLength = existingRows.length;
+
+        // 遍历新数据，更新或创建行
+        for (let i = 0; i < newData.length; i++) {
+            const newItem = newData[i];
+
+            if (i < existingLength) {
+                // 如果该位置已有行，检查是否为同一板块
+                const existingRow = existingRows[i];
+                const existingCode = existingRow.getAttribute('data-code');
+
+                if (existingCode === newItem.code) {
+                    // 同一板块，更新单元格内容
+                    updateRowCells(existingRow, newItem);
+                } else {
+                    // 不同板块，替换整行
+                    const newRow = createTableRow(newItem);
+                    tbody.replaceChild(newRow, existingRow);
+                }
+            } else {
+                // 超出现有行数，添加新行
+                const newRow = createTableRow(newItem);
+                tbody.appendChild(newRow);
             }
         }
-        // 初始化页面
-        fetchData('today');
-    </script>
+
+        for (let i = 0; i < existingLength - newData.length; i++) {
+            tbody.removeChild(tbody.lastChild)
+        }
+    }
+
+    // 更新单行单元格内容
+    function updateRowCells(row, item) {
+        const cells = row.querySelectorAll('td');
+        let cellIndex = 0;
+
+        for (const [field] of Object.entries(FIELD_MAP)) {
+            let cellValue = item[field];
+            let cellClass = '';
+
+            // 特殊格式化
+            if (field === 'changePercent' || field === 'mainInflowRatio' || field === 'superLargeInflowRatio' || field === 'largeInflowRatio' || field === 'midInflowRatio' || field === 'smallInflowRatio') {
+                // 百分比字段
+                if (typeof cellValue === 'number') {
+                    cellValue = cellValue.toFixed(2) + '%';
+                } else {
+                    cellValue = cellValue + '%';
+                }
+                // 涨用红色(positive)，跌用绿色(negative)
+                cellClass = cellValue && parseFloat(cellValue.replace('%', '')) >= 0 ? 'positive percent' : 'negative percent';
+            } else if (field === 'price') {
+                // 股价字段 - 不要转换为万元，正常显示
+                cellValue = typeof cellValue === 'number' ? cellValue.toFixed(2) : cellValue;
+                // 根据涨跌幅决定股价颜色，涨用红色，跌用绿色
+                cellClass = item.changePercent >= 0 ? 'positive' : 'negative';
+            } else if (field === 'mainNetInflow' || field === 'superLargeNetInflow' || field === 'largeNetInflow' || field === "midNetInflow" || field === 'smallNetInflow') {
+                // 资金流入字段（原始数据是元，使用通用格式化）
+                if (typeof cellValue === 'number') {
+                    cellValue = formatNumber(cellValue, 2);
+                }
+                // 资金净流入为正用红色(positive)，负用绿色(negative)
+                cellClass = cellValue && parseFloat(String(cellValue).replace(/[万亿]/g, '')) >= 0 ? 'positive amount' : 'negative amount';
+            } else {
+                // 其他字段
+                if (typeof cellValue === 'number') {
+                    cellValue = formatNumber(cellValue, 2);
+                }
+            }
+
+            // 更新单元格内容和类名
+            const cell = cells[cellIndex];
+            cell.textContent = cellValue || '-';
+            cell.className = cellClass;
+            cellIndex++;
+        }
+    }
+
+    // 创建一个新的表格行
+    function createTableRow(item) {
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-code', item.code); // 使用板块编号作为标识
+
+        for (const [field] of Object.entries(FIELD_MAP)) {
+            let cellValue = item[field];
+            let cellClass = '';
+
+            // 特殊格式化
+            if (field === 'changePercent' || field === 'mainInflowRatio' || field === 'superLargeInflowRatio' || field === 'largeInflowRatio' || field === 'midInflowRatio' || field === 'smallInflowRatio') {
+                // 百分比字段
+                if (typeof cellValue === 'number') {
+                    cellValue = cellValue.toFixed(2) + '%';
+                } else {
+                    cellValue = cellValue + '%';
+                }
+                // 涨用红色(positive)，跌用绿色(negative)
+                cellClass = cellValue && parseFloat(cellValue.replace('%', '')) >= 0 ? 'positive percent' : 'negative percent';
+            } else if (field === 'price') {
+                // 股价字段 - 不要转换为万元，正常显示
+                cellValue = typeof cellValue === 'number' ? cellValue.toFixed(2) : cellValue;
+                // 根据涨跌幅决定股价颜色，涨用红色，跌用绿色
+                cellClass = item.changePercent >= 0 ? 'positive' : 'negative';
+            } else if (field === 'mainNetInflow' || field === 'superLargeNetInflow' || field === 'largeNetInflow' || field === "midNetInflow" || field === 'smallNetInflow') {
+                // 资金流入字段（原始数据是元，使用通用格式化）
+                if (typeof cellValue === 'number') {
+                    cellValue = formatNumber(cellValue, 2);
+                }
+                // 资金净流入为正用红色(positive)，负用绿色(negative)
+                cellClass = cellValue && parseFloat(String(cellValue).replace(/[万亿]/g, '')) >= 0 ? 'positive amount' : 'negative amount';
+            } else {
+                // 其他字段
+                if (typeof cellValue === 'number') {
+                    cellValue = formatNumber(cellValue, 2);
+                }
+            }
+
+            const td = document.createElement('td');
+            td.textContent = cellValue || '-';
+            td.className = cellClass;
+            tr.appendChild(td);
+        }
+
+        return tr;
+    }
+
+    // 处理排序
+    function handleSort(field) {
+        // 如果点击的是同一个字段，则切换排序方向
+        if (currentSort.field === field) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            // 点击新字段，默认降序
+            currentSort.field = field;
+            currentSort.direction = 'desc';
+        }
+
+        // 更新表头排序样式
+        document.querySelectorAll('th').forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+            if (th.getAttribute('data-field') === field) {
+                th.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+        });
+
+        renderTable();
+    }
+
+    // 切换时间周期
+    function switchPeriod(period) {
+        if (currentPeriod === period) {
+            return;
+        }
+        currentPeriod = period;
+
+        // 更新按钮状态
+        todayBtn.classList.toggle('active', period === 'today');
+        fiveDayBtn.classList.toggle('active', period === 'fiveDay');
+        tenDayBtn.classList.toggle('active', period === 'tenDay');
+
+        // 获取新数据
+        fetchData(period);
+    }
+
+    // 初始化事件监听器
+    todayBtn.addEventListener('click', () => switchPeriod('today'));
+    fiveDayBtn.addEventListener('click', () => switchPeriod('fiveDay'));
+    tenDayBtn.addEventListener('click', () => switchPeriod('tenDay'));
+
+    // 添加搜索框事件监听器
+    searchInput.addEventListener('input', (e) => {
+        currentFilterWord = e.target.value
+        filterData();
+    });
+
+
+    /**
+     * 格式化板块资金流数据，便于前端显示
+     * @param {Array} diffData - 来自API的diff数组
+     * @returns {Array} 格式化后的数据
+     */
+    function formatPlateFundsData(diffData, period) {
+        if (!Array.isArray(diffData)) {
+            return [];
+        }
+        if (period === 'today') {
+            return diffData.map(item => ({
+                code: item.f12,           // 板块代码
+                name: item.f14,           // 板块名称
+                price: item.f2,           // 板块股价
+                changePercent: item.f3,   // 涨跌幅%
+                mainNetInflow: item.f62,  // 主力净流入-净额
+                mainInflowRatio: item.f184, // 主力流入-净占比%
+                superLargeNetInflow: item.f66, // 超大单净流入-净额
+                superLargeInflowRatio: item.f69, // 超大单净流入-净占比%
+                largeNetInflow: item.f72,       // 大单净流入-净额
+                largeInflowRatio: item.f75,     // 大单净流入-净占比%
+                midNetInflow: item.f78,         // 中单净流入-净额
+                midInflowRatio: item.f81,       // 中单净流入-净占比%
+                smallNetInflow: item.f84,       // 小单净流入-净额
+                smallInflowRatio: item.f87,     // 小单净流入-净占比%
+                topStock: item.f204,            // 主力净流入最大股
+                topStockCode: item.f205         // 主力净流入最大股代码
+            }));
+        } else if (period === 'fiveDay') {
+            return diffData.map(item => ({
+                code: item.f12,           // 板块代码
+                name: item.f14,           // 板块名称
+                price: item.f2,           // 板块股价
+                changePercent: item.f109,   // 涨跌幅%
+                mainNetInflow: item.f164,  // 主力净流入-净额
+                mainInflowRatio: item.f165, // 主力流入-净占比%
+                superLargeNetInflow: item.f166, // 超大单净流入-净额
+                superLargeInflowRatio: item.f167, // 超大单净流入-净占比%
+                largeNetInflow: item.f168,       // 大单净流入-净额
+                largeInflowRatio: item.f169,     // 大单净流入-净占比%
+                midNetInflow: item.f170,         // 中单净流入-净额
+                midInflowRatio: item.f171,       // 中单净流入-净占比%
+                smallNetInflow: item.f172,       // 小单净流入-净额
+                smallInflowRatio: item.f173,     // 小单净流入-净占比%
+                topStock: item.f257,            // 主力净流入最大股
+                topStockCode: item.f258         // 主力净流入最大股代码
+            }));
+        } else {
+            return diffData.map(item => ({
+                code: item.f12,           // 板块代码
+                name: item.f14,           // 板块名称
+                price: item.f2,           // 板块股价
+                changePercent: item.f160,   // 涨跌幅%
+                mainNetInflow: item.f174,  // 主力净流入-净额
+                mainInflowRatio: item.f175, // 主力流入-净占比%
+                superLargeNetInflow: item.f176, // 超大单净流入-净额
+                superLargeInflowRatio: item.f177, // 超大单净流入-净占比%
+                largeNetInflow: item.f178,       // 大单净流入-净额
+                largeInflowRatio: item.f179,     // 大单净流入-净占比%
+                midNetInflow: item.f180,         // 中单净流入-净额
+                midInflowRatio: item.f181,       // 中单净流入-净占比%
+                smallNetInflow: item.f182,       // 小单净流入-净额
+                smallInflowRatio: item.f183,     // 小单净流入-净占比%
+                topStock: item.f260,            // 主力净流入最大股
+                topStockCode: item.f261         // 主力净流入最大股代码
+            }));
+        }
+    }
+
+    // 初始化页面
+    setInterval(() => dataCache["today"] = undefined, 1000 * 10)
+    setInterval(() => dataCache = {}, 1000 * 60 * 60)
+    fetchData();
+    setInterval(fetchData, 1000 * 10);
+</script>
 </body>
 </html>

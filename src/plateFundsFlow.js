@@ -1,4 +1,4 @@
-import { getHttpContent } from '../src/http.util.js';
+import { getHttpContent } from './http.util.js';
 
 // 板块资金流API端点
 const PLATE_FUNDS_API = {
