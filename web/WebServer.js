@@ -1,18 +1,16 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import url from 'url';
 import openModule from 'open';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import {fileURLToPath} from 'url';
+import {dirname} from 'path';
 
 const open = openModule.default || openModule;
 import {getPort} from './utils/port.util.js';
 
 // Import the store module to get fund data
 import {getStoredCodes, addCode, removeCode, setMoney} from '../src/store.js';
-import {getFundCurrent} from '../src/fundAnalysisEnhanced.js';
-import {getPlateFundsFlow, formatPlateFundsData} from '../src/plateFundsFlow.js';
+import {getPlateFundsFlow} from '../src/plateFundsFlow.js';
 
 // Define __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -365,7 +363,7 @@ class WebServer {
                 res.writeHead(200, {'Content-Type': 'application/json'});
                 res.end(JSON.stringify({
                     success: true,
-                    data: data
+                    data
                 }));
             } catch (error) {
                 console.error(`Error fetching plate funds flow data for ${period}:`, error);

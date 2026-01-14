@@ -28,17 +28,17 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            background-color: #3498db;
+            background-color: #007bff;
             color: white;
             font-size: 14px;
         }
         
         button:hover {
-            background-color: #2980b9;
+            background-color: #0056b3;
         }
         
         button.active {
-            background-color: #e74c3c;
+            background-color: #dc3545;
         }
         
         table {
@@ -177,21 +177,21 @@
 
         // 字段映射
         const FIELD_MAP = {
-            f14: { label: '名称', sortable: true },
-            f12: { label: '编号', sortable: true },
-            f2: { label: '股价', sortable: true },
-            f3: { label: '涨跌幅', sortable: true },
-            f62: { label: '主力净流入', sortable: true },
-            f184: { label: '主力净占比', sortable: true },
-            f66: { label: '超大单净流入', sortable: true },
-            f69: { label: '超大单净占比', sortable: true },
-            f72: { label: '大单净流入', sortable: true },
-            f75: { label: '大单净占比', sortable: true },
-            f78: { label: '中单净流入', sortable: true },
-            f81: { label: '中单净占比', sortable: true },
-            f84: { label: '小单净流入', sortable: true },
-            f87: { label: '小单净占比', sortable: true },
-            f204: { label: '主力净流入最大股', sortable: true }
+            name: { label: '名称', sortable: true },
+            code: { label: '编号', sortable: true },
+            price: { label: '股价', sortable: true },
+            changePercent: { label: '涨跌幅', sortable: true },
+            mainNetInflow: { label: '主力净流入', sortable: true },
+            mainInflowRatio: { label: '主力净占比', sortable: true },
+            superLargeNetInflow: { label: '超大单净流入', sortable: true },
+            superLargeInflowRatio: { label: '超大单净占比', sortable: true },
+            largeNetInflow: { label: '大单净流入', sortable: true },
+            largeInflowRatio: { label: '大单净占比', sortable: true },
+            midNetInflow: { label: '中单净流入', sortable: true },
+            midInflowRatio: { label: '中单净占比', sortable: true },
+            smallNetInflow: { label: '小单净流入', sortable: true },
+            smallInflowRatio: { label: '小单净占比', sortable: true },
+            topStock: { label: '主力净流入最大股', sortable: true }
         };
 
         // 当前状态
@@ -240,7 +240,7 @@
                     throw new Error(result.error || '数据获取失败');
                 }
 
-                currentData = result.data.data.diff;
+                currentData = formatPlateFundsData(result.data.data.diff,period);
                 // 初始化过滤数据
                 filteredData = [...currentData];
                 totalCountEl.textContent = `共${filteredData.length}条记录`;
@@ -261,8 +261,8 @@
                 filteredData = currentData.filter(item => {
                     // 搜索名称(f14)或编号(f12)
                     return (
-                        (item.f14 && item.f14.toLowerCase().includes(term)) ||
-                        (item.f12 && item.f12.toLowerCase().includes(term))
+                        (item.name && item.name.toLowerCase().includes(term)) ||
+                        (item.code && item.code.toLowerCase().includes(term))
                     );
                 });
             }
@@ -350,7 +350,7 @@
                     let cellClass = '';
                     
                     // 特殊格式化
-                    if (field === 'f3' || field === 'f184' || field === 'f69' || field === 'f75' || field === 'f81' || field === 'f87') {
+                    if (field === 'changePercent' || field === 'mainInflowRatio' || field === 'superLargeInflowRatio' || field === 'largeInflowRatio' || field === 'midInflowRatio' || field === 'smallInflowRatio') {
                         // 百分比字段
                         if (typeof cellValue === 'number') {
                             cellValue = cellValue.toFixed(2) + '%';
@@ -359,12 +359,12 @@
                         }
                         // 涨用红色(positive)，跌用绿色(negative)
                         cellClass = cellValue && parseFloat(cellValue.replace('%', '')) >= 0 ? 'positive percent' : 'negative percent';
-                    } else if (field === 'f2') {
+                    } else if (field === 'price') {
                         // 股价字段 - 不要转换为万元，正常显示
                         cellValue = typeof cellValue === 'number' ? cellValue.toFixed(2) : cellValue;
                         // 根据涨跌幅决定股价颜色，涨用红色，跌用绿色
-                        cellClass = item.f3 >= 0 ? 'positive' : 'negative';
-                    } else if (field === 'f62' || field === 'f66' || field === 'f72' || field === 'f78' || field === 'f84') {
+                        cellClass = item.changePercent >= 0 ? 'positive' : 'negative';
+                    } else if (field === 'mainNetInflow' || field === 'superLargeNetInflow' || field === 'largeNetInflow' || field === "midNetInflow" || field === 'smallNetInflow') {
                         // 资金流入字段（原始数据是元，使用通用格式化）
                         if (typeof cellValue === 'number') {
                             cellValue = formatNumber(cellValue, 2);
@@ -463,6 +463,75 @@
             filterData(e.target.value);
         });
 
+
+        /**
+         * 格式化板块资金流数据，便于前端显示
+         * @param {Array} diffData - 来自API的diff数组
+         * @returns {Array} 格式化后的数据
+         */
+        function formatPlateFundsData(diffData,period) {
+            if (!Array.isArray(diffData)) {
+                return [];
+            }
+            if(period === 'today') {
+                return diffData.map(item => ({
+                    code: item.f12,           // 板块代码
+                    name: item.f14,           // 板块名称
+                    price: item.f2,           // 板块股价
+                    changePercent: item.f3,   // 涨跌幅%
+                    mainNetInflow: item.f62,  // 主力净流入-净额
+                    mainInflowRatio: item.f184, // 主力流入-净占比%
+                    superLargeNetInflow: item.f66, // 超大单净流入-净额
+                    superLargeInflowRatio: item.f69, // 超大单净流入-净占比%
+                    largeNetInflow: item.f72,       // 大单净流入-净额
+                    largeInflowRatio: item.f75,     // 大单净流入-净占比%
+                    midNetInflow: item.f78,         // 中单净流入-净额
+                    midInflowRatio: item.f81,       // 中单净流入-净占比%
+                    smallNetInflow: item.f84,       // 小单净流入-净额
+                    smallInflowRatio: item.f87,     // 小单净流入-净占比%
+                    topStock: item.f204,            // 主力净流入最大股
+                    topStockCode: item.f205         // 主力净流入最大股代码
+                }));
+            }else if (period === 'fiveDay') {
+                return diffData.map(item => ({
+                    code: item.f12,           // 板块代码
+                    name: item.f14,           // 板块名称
+                    price: item.f2,           // 板块股价
+                    changePercent: item.f109,   // 涨跌幅%
+                    mainNetInflow: item.f164,  // 主力净流入-净额
+                    mainInflowRatio: item.f165, // 主力流入-净占比%
+                    superLargeNetInflow: item.f166, // 超大单净流入-净额
+                    superLargeInflowRatio: item.f167, // 超大单净流入-净占比%
+                    largeNetInflow: item.f168,       // 大单净流入-净额
+                    largeInflowRatio: item.f169,     // 大单净流入-净占比%
+                    midNetInflow: item.f170,         // 中单净流入-净额
+                    midInflowRatio: item.f171,       // 中单净流入-净占比%
+                    smallNetInflow: item.f172,       // 小单净流入-净额
+                    smallInflowRatio: item.f173,     // 小单净流入-净占比%
+                    topStock: item.f257,            // 主力净流入最大股
+                    topStockCode: item.f258         // 主力净流入最大股代码
+                }));
+            }else{
+                return diffData.map(item => ({
+                    code: item.f12,           // 板块代码
+                    name: item.f14,           // 板块名称
+                    price: item.f2,           // 板块股价
+                    changePercent: item.f160,   // 涨跌幅%
+                    mainNetInflow: item.f174,  // 主力净流入-净额
+                    mainInflowRatio: item.f175, // 主力流入-净占比%
+                    superLargeNetInflow: item.f176, // 超大单净流入-净额
+                    superLargeInflowRatio: item.f177, // 超大单净流入-净占比%
+                    largeNetInflow: item.f178,       // 大单净流入-净额
+                    largeInflowRatio: item.f179,     // 大单净流入-净占比%
+                    midNetInflow: item.f180,         // 中单净流入-净额
+                    midInflowRatio: item.f181,       // 中单净流入-净占比%
+                    smallNetInflow: item.f182,       // 小单净流入-净额
+                    smallInflowRatio: item.f183,     // 小单净流入-净占比%
+                    topStock: item.f260,            // 主力净流入最大股
+                    topStockCode: item.f261         // 主力净流入最大股代码
+                }));
+            }
+        }
         // 初始化页面
         fetchData('today');
     </script>

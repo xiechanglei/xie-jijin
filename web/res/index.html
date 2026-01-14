@@ -152,6 +152,20 @@
 <body>
     <div class="container">
         <div class="summary-container">
+
+
+            <div class="controls">
+                <div class="control-group">
+                    <input type="text" id="fundCodeInput" placeholder="基金代码" />
+                    <input type="number" id="fundShareInput" placeholder="持仓份额" step="0.01" />
+                </div>
+                <div class="control-group">
+                    <button id="addFundBtn">添加基金</button>
+                    <button id="refreshBtn">刷新数据</button>
+                    <button id="plateFlowBtn">查看板块资金流</button>
+                </div>
+            </div>
+
             <div class="summary">
                 <div class="summary-item">
                     <span class="summary-label">持仓总金额</span>
@@ -164,18 +178,6 @@
                 <div class="summary-item">
                     <span class="summary-label">涨跌金额</span>
                     <span class="summary-value" id="totalChangeAmount">0.00</span>
-                </div>
-            </div>
-
-            <div class="controls">
-                <div class="control-group">
-                    <input type="text" id="fundCodeInput" placeholder="基金代码" />
-                    <input type="number" id="fundShareInput" placeholder="持仓份额" step="0.01" />
-                </div>
-                <div class="control-group">
-                    <button id="addFundBtn">添加基金</button>
-                    <button id="refreshBtn">刷新数据</button>
-                    <button id="plateFlowBtn">查看板块资金流</button>
                 </div>
             </div>
         </div>
