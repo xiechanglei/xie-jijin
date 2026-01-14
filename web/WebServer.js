@@ -11,6 +11,7 @@ import {getPort} from './utils/port.util.js';
 // Import the store module to get fund data
 import {getStoredCodes, addCode, removeCode, setMoney} from '../src/store.js';
 import {getPlateFundsFlow} from '../src/plateFundsFlow.js';
+import {resolveModulePath} from "./utils/module.js";
 
 // Define __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -65,9 +66,9 @@ class WebServer {
         if (pathname.startsWith('/node_lib/')) {
             // Map /node_lib/ to node_modules directory
             const modulePath = pathname.substring('/node_lib/'.length);
+            const moduleName = modulePath.split('/')[0];
             // Use the project's node_modules directory relative to the server file
-            let moduleFilePath = path.join(__dirname, '..', '..', modulePath);
-
+            let moduleFilePath = resolveModulePath(moduleName) + modulePath;
             // Check if file exists
             fs.access(moduleFilePath, fs.constants.F_OK, (err) => {
                 if (err) {

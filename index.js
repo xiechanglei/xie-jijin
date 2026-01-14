@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import WebServer from './web/WebServer.js';
-
 async function main() {
     console.log('启动Web服务器...');
     const server = new WebServer();
