@@ -5,7 +5,7 @@ import {program} from "commander";
  * @return {Object} 包含所有命令选项的对象
  */
 export const getCommandOptions = () => {
-    program.option("--user [user]", "网页展示").parse(process.argv);
+    program.option("--user [user]", "网页展示", "xie").parse(process.argv);
 
     const options = program.opts();
     return {
