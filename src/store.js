@@ -1,7 +1,12 @@
 import fs from 'fs';
 import {homedir} from 'os';
+import {getCommandOptions} from "./command.js";
+
 const userHome = homedir();
-const filePath = `${userHome}/.xie_jijin.json`;
+
+const options = getCommandOptions();
+
+const filePath = `${userHome}/.${options.user}_jijin.json`;
 
 // 读取存储的基金数据
 const readStoredData = () => {
@@ -46,7 +51,7 @@ const removeCode = (code) => {
     }
 };
 
-const setMoney = async (code, shares=0) => {
+const setMoney = async (code, shares = 0) => {
     // 设置指定基金的持仓金额
     const {data} = readStoredData();
 
