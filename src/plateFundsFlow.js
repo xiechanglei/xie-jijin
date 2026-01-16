@@ -1,4 +1,4 @@
-import { getHttpContent } from './http.util.js';
+import {getHttpContent} from './http.util.js';
 
 // 板块资金流API端点
 const PLATE_FUNDS_API = {
@@ -6,6 +6,10 @@ const PLATE_FUNDS_API = {
     fiveDay: 'https://push2.eastmoney.com/api/qt/clist/get?fid=f164&po=1&pz=999&pn=1&np=1&fltt=2&invt=2&ut=8dec03ba335b81bf4ebdf7b29ec27d15&fs=m%3A90+t%3A2&fields=f12%2Cf14%2Cf2%2Cf109%2Cf164%2Cf165%2Cf166%2Cf167%2Cf168%2Cf169%2Cf170%2Cf171%2Cf172%2Cf173%2Cf257%2Cf258%2Cf124%2Cf1%2Cf13',
     tenDay: 'https://push2.eastmoney.com/api/qt/clist/get?fid=f174&po=1&pz=99&pn=1&np=1&fltt=2&invt=2&ut=8dec03ba335b81bf4ebdf7b29ec27d15&fs=m%3A90+t%3A2&fields=f12%2Cf14%2Cf2%2Cf160%2Cf174%2Cf175%2Cf176%2Cf177%2Cf178%2Cf179%2Cf180%2Cf181%2Cf182%2Cf183%2Cf260%2Cf261%2Cf124%2Cf1%2Cf13'
 };
+
+// ""2026-01-15 11:01,-2508445190.0,1856039184.0,482743968.0,-695989036.0,-1812456154.0"",  time,主力，小单，中单，大单，超大单
+const klineApi = "https://push2.eastmoney.com/api/qt/stock/fflow/kline/get?lmt=0&klt=1&fields1=f1%2Cf2%2Cf3%2Cf7&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61%2Cf62%2Cf63%2Cf64%2Cf65&secid=90.BK0480"
+
 
 /**
  * 获取板块资金流数据

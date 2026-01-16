@@ -239,7 +239,7 @@
             async function loadEChartsAndHistoryData(fundCode) {
                 // 动态加载 ECharts 库
                 const script = document.createElement('script');
-                script.src = '/node_lib/echarts/dist/echarts.min.js';
+                script.src = '/lib/echarts.min.js';
                 document.head.appendChild(script);
 
                 script.onload = async function() {
