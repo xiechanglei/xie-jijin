@@ -11,11 +11,14 @@ export const resolveModulePath = (moduleName) => {
         let currentDir = path.dirname(entryFilePath);
         while (currentDir !== path.dirname(currentDir)) { // 防止无限循环到根目录
             const packageJsonPath = path.join(currentDir, 'package.json');
-            if (fs.statSync(packageJsonPath).isFile()) {
-                return currentDir;
-            } else {
-                currentDir = path.dirname(currentDir);
+            if (fs.existsSync(packageJsonPath)) {
+                const contents = fs.readFileSync(packageJsonPath);
+                const json = JSON.parse(contents.toString());
+                if (json.name === moduleName) {
+                    return currentDir;
+                }
             }
+            currentDir = path.dirname(currentDir);
         }
     } catch (error) {
     }

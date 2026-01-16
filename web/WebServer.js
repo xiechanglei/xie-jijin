@@ -66,9 +66,10 @@ class WebServer {
         if (pathname.startsWith('/node_lib/')) {
             // Map /node_lib/ to node_modules directory
             const modulePath = pathname.substring('/node_lib/'.length);
-            const moduleName = modulePath.split('/')[0];
-            // Use the project's node_modules directory relative to the server file
-            let moduleFilePath = resolveModulePath(moduleName) + modulePath;
+            const moduleSplits = modulePath.split('/');
+            const moduleName = moduleSplits.shift();
+            moduleSplits.unshift(resolveModulePath(moduleName));
+            let moduleFilePath = moduleSplits.join("/")
             // Check if file exists
             fs.access(moduleFilePath, fs.constants.F_OK, (err) => {
                 if (err) {
