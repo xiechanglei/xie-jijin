@@ -263,12 +263,10 @@
         if (!currentFilterWord || currentFilterWord.trim() === '') {
             filteredData = [...currentData];
         } else {
-            const term = currentFilterWord.toLowerCase().trim();
-            filteredData = currentData.filter(item => {
-                // 搜索名称(f14)或编号(f12)
-                return (
-                    (item.name && item.name.toLowerCase().includes(term)) ||
-                    (item.code && item.code.toLowerCase().includes(term))
+            const termWord = currentFilterWord.toLowerCase().trim();
+            const termArr = termWord.split(" ").map(t => t.trim().toLowerCase());
+            filteredData = currentData.filter(fund => {
+                return termArr.some(term => (fund.name && fund.name.toLowerCase().includes(term)) || (fund.code && fund.code.toLowerCase().includes(term))
                 );
             });
         }
